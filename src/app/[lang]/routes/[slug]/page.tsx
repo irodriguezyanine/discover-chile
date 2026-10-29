@@ -13,6 +13,7 @@ import { OpenPlannerLink } from "@/components/open-planner-link";
 import { ActivityBlock } from "@/components/activity-block";
 import { FuelStopCard } from "@/components/fuel-stop-card";
 import { StayCard } from "@/components/stay-card";
+import { TravelOptions } from "@/components/travel-options";
 
 export function generateStaticParams() {
   return sampleRoutes.flatMap((route) =>
@@ -79,6 +80,18 @@ export default async function RouteDetailPage({
         >
           {messages.dest.add}
         </OpenPlannerLink>
+
+        <div className="mt-10 space-y-6">
+          {route.regions.map((id) => (
+            <TravelOptions
+              key={id}
+              zoneId={id}
+              locale={locale}
+              messages={messages}
+              compact
+            />
+          ))}
+        </div>
 
         <h2 className="mt-14 font-display text-3xl">{messages.routes.itinerary}</h2>
         <ol className="mt-6 space-y-4">

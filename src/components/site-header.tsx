@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu, Minus, X } from "lucide-react";
 import type { Messages } from "@/i18n/en";
 import type { Locale } from "@/i18n/config";
@@ -28,18 +28,30 @@ export function SiteHeader({
   messages: Messages;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const isHome = pathname.split("/").filter(Boolean).length === 1;
   const { open, openPlanner, minimize } = usePlanner();
   const href = (path: string) => `/${locale}${path}`;
-  const light = isHome && !open;
+  const light = isHome && !open && !scrolled;
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 280);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <header
       className={cn(
         "inset-x-0 top-0 z-50",
         isHome
-          ? cn("absolute", open && "bg-night/70 backdrop-blur-md")
+          ? cn(
+              "fixed",
+              light ? "bg-transparent" : "bg-sand/90 backdrop-blur border-b border-line",
+              open && "bg-night/70 backdrop-blur-md border-transparent",
+            )
           : "sticky border-b border-line bg-sand/90 backdrop-blur",
       )}
     >
@@ -51,14 +63,14 @@ export function SiteHeader({
           }}
           className={cn(
             "flex items-center gap-3 font-display text-xl tracking-tight",
-            light ? "text-cream" : isHome ? "text-cream" : "text-ink",
+            light || (isHome && open) ? "text-cream" : "text-ink",
           )}
         >
           <ChileFlag
             variant="circle"
             className={cn(
               "size-10 shrink-0 shadow-[0_6px_16px_rgba(8,20,16,0.35)]",
-              light || isHome ? "ring-2 ring-white/85" : "ring-2 ring-black/10",
+              light || (isHome && open) ? "ring-2 ring-white/85" : "ring-2 ring-black/10",
             )}
           />
           Discover Chile
@@ -66,7 +78,7 @@ export function SiteHeader({
         <nav
           className={cn(
             "hidden items-center gap-4 text-[13px] lg:flex xl:gap-6 xl:text-sm",
-            light || isHome ? "text-cream/85" : "text-ink-soft",
+            light || (isHome && open) ? "text-cream/85" : "text-ink-soft",
           )}
         >
           {links.map(([key, path]) => (
@@ -76,7 +88,9 @@ export function SiteHeader({
               onClick={() => {
                 if (open) minimize();
               }}
-              className={light || isHome ? "hover:text-glacier" : "hover:text-terracotta"}
+              className={
+                light || (isHome && open) ? "hover:text-glacier" : "hover:text-terracotta"
+              }
             >
               {messages.nav[key]}
             </Link>
@@ -84,7 +98,7 @@ export function SiteHeader({
           <LanguageSwitcher
             locale={locale}
             label={messages.common.language}
-            light={light || isHome}
+            light={light || (isHome && open)}
           />
           <button
             type="button"
@@ -100,7 +114,7 @@ export function SiteHeader({
           type="button"
           className={cn(
             "rounded-full border p-2 lg:hidden",
-            light || isHome ? "border-white/20 text-cream" : "border-line text-ink",
+            light || (isHome && open) ? "border-white/20 text-cream" : "border-line text-ink",
           )}
           onClick={() => setMenuOpen((value) => !value)}
           aria-label="Menu"

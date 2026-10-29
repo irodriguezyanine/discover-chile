@@ -16,6 +16,7 @@ import { OpenPlannerLink } from "@/components/open-planner-link";
 import { ActivityBlock } from "@/components/activity-block";
 import { FuelStopCard } from "@/components/fuel-stop-card";
 import { StayCard } from "@/components/stay-card";
+import { TravelOptions } from "@/components/travel-options";
 
 export function generateStaticParams() {
   return destinations.flatMap((destination) =>
@@ -103,6 +104,10 @@ export default async function DestinationPage({
           </OpenPlannerLink>
         </aside>
       </div>
+
+      <section className="mx-auto max-w-6xl px-4 pb-10 md:px-6">
+        <TravelOptions zoneId={destination.id} locale={locale} messages={messages} />
+      </section>
 
       {relatedRoutes.length ? (
         <section className="mx-auto max-w-6xl px-4 pb-10 md:px-6">

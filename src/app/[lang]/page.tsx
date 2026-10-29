@@ -4,9 +4,9 @@ import { notFound } from "next/navigation";
 import { destinations } from "@/data/destinations";
 import { img } from "@/data/images";
 import { DestinationCard } from "@/components/destination-card";
+import { TravelDesk } from "@/components/travel-desk";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { isLocale, type Locale } from "@/i18n/config";
-import { ChileFlag } from "@/components/chile-flag";
 import { OpenPlannerLink } from "@/components/open-planner-link";
 
 export default async function HomePage({
@@ -24,43 +24,7 @@ export default async function HomePage({
 
   return (
     <>
-      <section className="relative min-h-[92dvh] overflow-hidden bg-night text-cream">
-        <Image
-          src={img.hero}
-          alt={messages.hero.title}
-          fill
-          className="object-cover"
-          sizes="100vw"
-          preload
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-night via-night/55 to-night/20" />
-        <div className="relative mx-auto flex min-h-[92dvh] max-w-6xl flex-col justify-end px-4 pb-20 pt-32 md:px-6">
-          <p className="flex items-center gap-3 text-sm uppercase tracking-[0.35em] text-glacier">
-            <ChileFlag
-              variant="circle"
-              className="size-7 shrink-0 shadow-md ring-2 ring-white/50"
-            />
-            {messages.hero.kicker}
-          </p>
-          <h1 className="mt-4 max-w-3xl font-display text-4xl leading-tight md:text-7xl">
-            {messages.hero.title}
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg text-cream/80">
-            {messages.hero.subtitle}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <OpenPlannerLink className="inline-flex rounded-full bg-terracotta px-6 py-3 font-medium text-cream hover:bg-terracotta-deep">
-              {messages.hero.cta}
-            </OpenPlannerLink>
-            <Link
-              href={`/${locale}/destinations`}
-              className="rounded-full border border-white/30 px-6 py-3 hover:bg-white/10"
-            >
-              {messages.hero.secondary}
-            </Link>
-          </div>
-        </div>
-      </section>
+      <TravelDesk destinations={destinations} locale={locale} messages={messages} />
 
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-12 md:grid-cols-3 md:px-6">
         {[messages.stats.solo, messages.stats.forbes, messages.stats.km].map((item) => (
@@ -140,9 +104,7 @@ export default async function HomePage({
           />
           <div className="absolute inset-0 bg-night/55" />
           <div className="relative max-w-2xl px-6 py-16 text-cream md:px-12">
-            <h2 className="font-display text-4xl md:text-5xl">
-              {messages.distances.title}
-            </h2>
+            <h2 className="font-display text-4xl md:text-5xl">{messages.distances.title}</h2>
             <p className="mt-4 text-cream/85">{messages.distances.body}</p>
           </div>
         </div>

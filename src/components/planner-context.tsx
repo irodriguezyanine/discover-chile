@@ -52,7 +52,7 @@ export function PlannerProvider({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [open, setOpen] = useState(() => isHomePath(pathname));
+  const [open, setOpen] = useState(false);
   const [plan, setPlan] = useState<PlannerInput>(initialPlan);
   const [step, setStep] = useState(0);
   const home = `/${locale}`;

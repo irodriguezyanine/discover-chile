@@ -1,6 +1,4 @@
-import type { Messages } from "@/i18n/en";
-
-export const ja: Messages = {
+export const ja = {
   brand: "Discover Chile",
   tagline: "ひとつの国。いくつもの旅。正直な価格。",
   nav: {

@@ -10,9 +10,17 @@ import { ko } from './ko'
 import { zh } from './zh'
 import { ru } from './ru'
 import { ar } from './ar'
+import { deskGo } from './desk-go'
+import { mergeMessages } from './merge'
 import type { Locale } from './config'
 
-const dictionaries: Record<Locale, Messages> = { en, es, pt, de, fr, it, nl, ja, ko, zh, ru, ar }
+const partials = { es, pt, de, fr, it, nl, ja, ko, zh, ru, ar }
+
 export function getDictionary(locale: Locale): Messages {
-  return dictionaries[locale] ?? en
+  const extra = deskGo[locale] ?? deskGo.en
+  if (locale === 'en') {
+    return { ...en, desk: extra.desk, go: extra.go }
+  }
+  const merged = mergeMessages(en, partials[locale] as Parameters<typeof mergeMessages>[1])
+  return { ...merged, desk: extra.desk, go: extra.go }
 }

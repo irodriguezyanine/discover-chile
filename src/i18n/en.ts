@@ -1,3 +1,5 @@
+import { deskGo } from "@/i18n/desk-go";
+
 export const en = {
   brand: "Discover Chile",
   tagline: "One country. Several trips. Honest prices.",
@@ -269,6 +271,8 @@ export const en = {
     cl: "You already live here. Use this to quote friends visiting — the cart is for them.",
     generic: "Fly the long gaps. Sleep the night buses. Do not collect regions like stamps.",
   },
+  desk: deskGo.en.desk,
+  go: deskGo.en.go,
   common: {
     hours: "h",
     days: "days",

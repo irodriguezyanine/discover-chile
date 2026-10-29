@@ -43,6 +43,7 @@ import { interpolate } from "@/lib/interpolate";
 import { QuotePanel } from "@/components/quote-panel";
 import { CountryFlag } from "@/components/country-flag";
 import { ChileFlag } from "@/components/chile-flag";
+import { TravelOptions } from "@/components/travel-options";
 import { usePlanner } from "@/components/planner-context";
 import { cn } from "@/lib/cn";
 
@@ -517,6 +518,16 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                   );
                 })}
               </div>
+              {plan.regions.length ? (
+                <div className="mt-6">
+                  <TravelOptions
+                    zoneId={plan.regions[plan.regions.length - 1] ?? plan.regions[0]}
+                    locale={locale}
+                    messages={messages}
+                    compact
+                  />
+                </div>
+              ) : null}
             </div>
           ) : null}
 

@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { isLocale } from "@/i18n/config";
 
+export const instant = false;
+
 export default async function PlanPage({
   params,
   searchParams,

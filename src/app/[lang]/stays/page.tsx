@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import { stays } from "@/data/stays";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { isLocale, type Locale } from "@/i18n/config";
-import { pick } from "@/i18n/loc";
-import { formatMoney } from "@/lib/currency";
+import { PageHero } from "@/components/page-hero";
+import { StayCard } from "@/components/stay-card";
 
 export default async function StaysPage({
   params,
@@ -14,28 +14,42 @@ export default async function StaysPage({
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
   const messages = getDictionary(locale);
+  const hostels = stays.filter((stay) => stay.kind === "hostel");
+  const lodgings = stays.filter((stay) => stay.kind === "stay");
+  const eats = stays.filter((stay) => stay.kind === "eat");
 
   return (
     <div className="bg-sand pt-28 pb-20">
       <div className="mx-auto max-w-6xl px-4 md:px-6">
-        <h1 className="font-display text-5xl">{messages.staysPage.title}</h1>
-        <p className="mt-4 max-w-2xl text-ink-soft">{messages.staysPage.lead}</p>
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
-          {stays.map((stay) => (
-            <article key={stay.id} className="rounded-[1.6rem] bg-cream p-5">
-              <p className="text-xs uppercase tracking-wider text-terracotta">
-                {stay.kind === "eat" ? messages.staysPage.eat : messages.staysPage.stay} ·{" "}
-                {messages.styles[stay.style]}
-              </p>
-              <h2 className="mt-2 font-display text-2xl">{stay.name}</h2>
-              <p className="text-sm text-ink-soft">{pick(stay.place, locale)}</p>
-              <p className="mt-3 text-sm">{pick(stay.blurb, locale)}</p>
-              <p className="mt-4 text-sm">
-                {messages.staysPage.from} {formatMoney(stay.fromUsd, "USD", "en")}
-              </p>
-            </article>
-          ))}
-        </div>
+        <PageHero
+          kicker={messages.nav.stays}
+          title={messages.staysPage.title}
+          lead={messages.staysPage.lead}
+        />
+        <section className="mt-12">
+          <h2 className="font-display text-3xl">{messages.staysPage.hostel}</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {hostels.map((stay) => (
+              <StayCard key={stay.id} stay={stay} locale={locale} messages={messages} />
+            ))}
+          </div>
+        </section>
+        <section className="mt-12">
+          <h2 className="font-display text-3xl">{messages.staysPage.stay}</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {lodgings.map((stay) => (
+              <StayCard key={stay.id} stay={stay} locale={locale} messages={messages} />
+            ))}
+          </div>
+        </section>
+        <section className="mt-12">
+          <h2 className="font-display text-3xl">{messages.staysPage.eat}</h2>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            {eats.map((stay) => (
+              <StayCard key={stay.id} stay={stay} locale={locale} messages={messages} />
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );

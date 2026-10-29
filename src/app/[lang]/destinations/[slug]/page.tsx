@@ -2,10 +2,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { destinations, getDestinationBySlug } from "@/data/destinations";
+import { activitiesByRegion } from "@/data/activities";
+import { fuelByRegion } from "@/data/fuel";
+import { parksByRegion } from "@/data/parks";
+import { routesByRegion } from "@/data/routes";
+import { staysByRegion } from "@/data/stays";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { isLocale, type Locale } from "@/i18n/config";
 import { pick } from "@/i18n/loc";
 import { formatMoney } from "@/lib/currency";
+import { ChileFlag } from "@/components/chile-flag";
+import { OpenPlannerLink } from "@/components/open-planner-link";
+import { ActivityBlock } from "@/components/activity-block";
+import { FuelStopCard } from "@/components/fuel-stop-card";
+import { StayCard } from "@/components/stay-card";
 
 export function generateStaticParams() {
   return destinations.flatMap((destination) =>
@@ -26,6 +36,11 @@ export default async function DestinationPage({
   if (!destination) notFound();
   const locale = lang as Locale;
   const messages = getDictionary(locale);
+  const relatedActs = activitiesByRegion(destination.id);
+  const relatedFuel = fuelByRegion(destination.id);
+  const relatedStay = staysByRegion(destination.id);
+  const relatedParks = parksByRegion(destination.id);
+  const relatedRoutes = routesByRegion(destination.id);
 
   return (
     <article className="bg-sand pt-24 pb-20">
@@ -40,7 +55,8 @@ export default async function DestinationPage({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-night via-night/30 to-transparent" />
         <div className="absolute bottom-8 left-0 right-0 mx-auto max-w-6xl px-4 text-cream md:px-6">
-          <p className="text-sm uppercase tracking-[0.3em] text-glacier">
+          <p className="flex items-center gap-3 text-sm uppercase tracking-[0.3em] text-glacier">
+            <ChileFlag variant="circle" className="size-6 ring-1 ring-white/40" />
             {pick(destination.region, locale)}
           </p>
           <h1 className="mt-2 font-display text-5xl md:text-7xl">
@@ -79,14 +95,98 @@ export default async function DestinationPage({
           <p className="mt-4 text-sm">
             {messages.planner.fees}: {formatMoney(destination.feesUsd, "USD", "en")}
           </p>
-          <Link
-            href={`/${locale}/plan?r=${destination.id}`}
+          <OpenPlannerLink
+            seed={{ regions: [destination.id] }}
             className="mt-6 inline-flex rounded-full bg-terracotta px-5 py-3"
           >
             {messages.dest.add}
-          </Link>
+          </OpenPlannerLink>
         </aside>
       </div>
+
+      {relatedRoutes.length ? (
+        <section className="mx-auto max-w-6xl px-4 pb-10 md:px-6">
+          <h2 className="font-display text-3xl">{messages.nav.routes}</h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {relatedRoutes.map((route) => (
+              <Link
+                key={route.id}
+                href={`/${locale}/routes/${route.slug}`}
+                className="rounded-[1.4rem] bg-cream p-5 hover:ring-1 hover:ring-terracotta"
+              >
+                <p className="text-xs uppercase tracking-wider text-terracotta">
+                  {route.days} {messages.routes.days} · {route.km} {messages.routes.km}
+                </p>
+                <p className="mt-2 font-display text-2xl">{pick(route.name, locale)}</p>
+                <p className="mt-2 line-clamp-2 text-sm text-ink-soft">
+                  {pick(route.summary, locale)}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {relatedActs.length ? (
+        <section className="mx-auto max-w-6xl space-y-6 px-4 pb-10 md:px-6">
+          <h2 className="font-display text-3xl">{messages.nav.activities}</h2>
+          {relatedActs.map((activity) => (
+            <ActivityBlock
+              key={activity.id}
+              activity={activity}
+              locale={locale}
+              messages={messages}
+            />
+          ))}
+        </section>
+      ) : null}
+
+      {relatedStay.length ? (
+        <section className="mx-auto max-w-6xl px-4 pb-10 md:px-6">
+          <h2 className="font-display text-3xl">{messages.nav.stays}</h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {relatedStay.map((stay) => (
+              <StayCard key={stay.id} stay={stay} locale={locale} messages={messages} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {relatedFuel.length ? (
+        <section className="mx-auto max-w-6xl px-4 pb-10 md:px-6">
+          <h2 className="font-display text-3xl">{messages.nav.fuel}</h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {relatedFuel.map((stop) => (
+              <FuelStopCard key={stop.id} stop={stop} locale={locale} messages={messages} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {relatedParks.length ? (
+        <section className="mx-auto max-w-6xl px-4 pb-4 md:px-6">
+          <h2 className="font-display text-3xl">{messages.nav.parks}</h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {relatedParks.map((park) => (
+              <article key={park.id} className="overflow-hidden rounded-[1.4rem] bg-cream">
+                <div className="relative h-40">
+                  <Image
+                    src={park.image}
+                    alt={pick(park.name, locale)}
+                    fill
+                    className="object-cover"
+                    sizes="50vw"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="font-display text-xl">{pick(park.name, locale)}</h3>
+                  <p className="mt-2 text-sm text-ink-soft">{pick(park.note, locale)}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </article>
   );
 }

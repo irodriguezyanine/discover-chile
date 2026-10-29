@@ -1,9 +1,9 @@
 export const img = {
   hero: "https://images.unsplash.com/photo-1558517286-6b7b81953cb5?auto=format&fit=crop&w=2000&q=80",
   atacama:
-    "https://images.unsplash.com/photo-1544986581-efac024faf62?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1600&q=80",
   atacamaMoon:
-    "https://images.unsplash.com/photo-1544986581-efac024faf62?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1600&q=80",
   santiago:
     "https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?auto=format&fit=crop&w=1600&q=80",
   valparaiso:
@@ -18,7 +18,7 @@ export const img = {
   glacier:
     "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&w=1600&q=80",
   rapanui:
-    "https://images.unsplash.com/photo-1587595431973-160d0d94add1?auto=format&fit=crop&w=1600&q=80",
+    "https://images.unsplash.com/photo-1524536120883-854d2c00bf1f?auto=format&fit=crop&w=1600&q=80",
   stars:
     "https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1600&q=80",
   snow: "https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?auto=format&fit=crop&w=1600&q=80",

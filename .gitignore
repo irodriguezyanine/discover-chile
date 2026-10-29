@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local brief assets
 /_brief-audio/
+
+.vercel
+.env*

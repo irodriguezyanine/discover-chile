@@ -6,6 +6,8 @@ import { img } from "@/data/images";
 import { DestinationCard } from "@/components/destination-card";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { isLocale, type Locale } from "@/i18n/config";
+import { ChileFlag } from "@/components/chile-flag";
+import { OpenPlannerLink } from "@/components/open-planner-link";
 
 export default async function HomePage({
   params,
@@ -33,7 +35,11 @@ export default async function HomePage({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-night via-night/55 to-night/20" />
         <div className="relative mx-auto flex min-h-[92dvh] max-w-6xl flex-col justify-end px-4 pb-20 pt-32 md:px-6">
-          <p className="text-sm uppercase tracking-[0.35em] text-glacier">
+          <p className="flex items-center gap-3 text-sm uppercase tracking-[0.35em] text-glacier">
+            <ChileFlag
+              variant="circle"
+              className="size-7 shrink-0 shadow-md ring-2 ring-white/50"
+            />
             {messages.hero.kicker}
           </p>
           <h1 className="mt-4 max-w-3xl font-display text-4xl leading-tight md:text-7xl">
@@ -43,12 +49,9 @@ export default async function HomePage({
             {messages.hero.subtitle}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href={`/${locale}/plan`}
-              className="rounded-full bg-terracotta px-6 py-3 font-medium text-cream hover:bg-terracotta-deep"
-            >
+            <OpenPlannerLink className="inline-flex rounded-full bg-terracotta px-6 py-3 font-medium text-cream hover:bg-terracotta-deep">
               {messages.hero.cta}
-            </Link>
+            </OpenPlannerLink>
             <Link
               href={`/${locale}/destinations`}
               className="rounded-full border border-white/30 px-6 py-3 hover:bg-white/10"
@@ -106,6 +109,26 @@ export default async function HomePage({
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-4 py-8 md:px-6">
+        <h2 className="font-display text-4xl">{messages.field.title}</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {[
+            [`/${locale}/fuel`, messages.field.fuel, messages.field.fuelD],
+            [`/${locale}/activities`, messages.field.raft, messages.field.raftD],
+            [`/${locale}/stays`, messages.field.stay, messages.field.stayD],
+          ].map(([href, title, body]) => (
+            <Link
+              key={href}
+              href={href}
+              className="rounded-[1.6rem] bg-cream p-6 hover:ring-1 hover:ring-terracotta"
+            >
+              <h3 className="font-display text-2xl">{title}</h3>
+              <p className="mt-3 text-sm text-ink-soft">{body}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       <section className="relative mx-4 my-8 overflow-hidden rounded-[2rem] md:mx-auto md:max-w-6xl">
         <div className="relative min-h-[420px]">
           <Image
@@ -129,12 +152,9 @@ export default async function HomePage({
         <div className="rounded-[2rem] bg-terracotta px-6 py-12 text-cream md:px-12">
           <h2 className="font-display text-4xl">{messages.cta.title}</h2>
           <p className="mt-4 max-w-2xl text-cream/90">{messages.cta.body}</p>
-          <Link
-            href={`/${locale}/plan`}
-            className="mt-6 inline-flex rounded-full bg-night px-6 py-3"
-          >
+          <OpenPlannerLink className="mt-6 inline-flex rounded-full bg-night px-6 py-3">
             {messages.hero.cta}
-          </Link>
+          </OpenPlannerLink>
         </div>
       </section>
     </>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { isLocale, type Locale } from "@/i18n/config";
+import { PageHero } from "@/components/page-hero";
 
 export default async function VisaPage({
   params,
@@ -15,8 +16,7 @@ export default async function VisaPage({
   return (
     <div className="bg-sand pt-28 pb-20">
       <div className="mx-auto max-w-3xl px-4 md:px-6">
-        <h1 className="font-display text-5xl">{messages.visa.title}</h1>
-        <p className="mt-4 text-ink-soft">{messages.visa.lead}</p>
+        <PageHero kicker={messages.nav.visa} title={messages.visa.title} lead={messages.visa.lead} />
         <div className="mt-8 space-y-4">
           {[
             messages.visa.free,

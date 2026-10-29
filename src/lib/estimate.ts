@@ -29,11 +29,23 @@ export type Estimate = {
   activitiesUsd: number;
   transportUsd: number;
   feesUsd: number;
+  fuelUsd: number;
   allocation: { id: string; days: number }[];
   legs: TransportLeg[];
   minDays: number;
   daysShort: boolean;
   tooAmbitious: boolean;
+};
+
+const CAMPER_KM: Record<string, number> = {
+  atacama: 420,
+  "santiago-wine": 180,
+  lakes: 480,
+  chiloe: 160,
+  carretera: 980,
+  patagonia: 300,
+  ski: 140,
+  rapanui: 0,
 };
 
 const BUS_LIMIT_HOURS = 14;
@@ -194,7 +206,13 @@ export function estimateTrip(input: PlannerInput): Estimate {
 
   const legs = buildLegs(input.regions, input.eco, travelers, style);
   const transportUsd = legs.reduce((sum, leg) => sum + leg.usd, 0);
-  const totalUsd = Math.round(lodgingUsd + foodUsd + activitiesUsd + transportUsd + feesUsd);
+  const driveKm = style === "camper"
+    ? input.regions.reduce((sum, id) => sum + (CAMPER_KM[id] ?? 0), 0)
+    : 0;
+  const fuelUsd = Math.round(driveKm * 0.22 * vanCount(travelers));
+  const totalUsd = Math.round(
+    lodgingUsd + foodUsd + activitiesUsd + transportUsd + feesUsd + fuelUsd,
+  );
   const daysShort = days < minDays && regions.length > 0;
   const tooAmbitious = regions.length >= 4 && days < 16;
 
@@ -206,6 +224,7 @@ export function estimateTrip(input: PlannerInput): Estimate {
     activitiesUsd: Math.round(activitiesUsd),
     transportUsd: Math.round(transportUsd),
     feesUsd: Math.round(feesUsd),
+    fuelUsd,
     allocation,
     legs,
     minDays,
@@ -228,6 +247,7 @@ export function emptyEstimate(): Estimate {
     activitiesUsd: 0,
     transportUsd: 0,
     feesUsd: 0,
+    fuelUsd: 0,
     allocation: [],
     legs: [],
     minDays: 0,

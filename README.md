@@ -2,11 +2,11 @@
 
 Interfaz para viajeros extranjeros que quieren armar un viaje a Chile sin subestimar las distancias.
 
-El planificador pregunta país, días, presupuesto y regiones (norte, centro, lagos, Patagonia, Rapa Nui, etc.) y cotiza en vivo como un carrito, en la moneda local o en USD.
+El planificador pregunta país, días, presupuesto y regiones (norte, centro, lagos, Patagonia, Isla de Pascua, etc.) y cotiza en vivo como un carrito, en la moneda local o en USD.
 
 ## Idea
 
-Chile no es un destino: son varios países en uno. La gente llega, abre el mapa y dibuja Atacama + Torres del Paine + Isla de Pascua en diez días. Esta pieza frena esa fantasía con rutas honestas, avión vs night bus, visas por pasaporte y un estimado que salta cuando sumas Rapa Nui.
+Chile no es un destino: son varios paisajes en uno. La gente llega, abre el mapa y dibuja Atacama + Torres del Paine + Isla de Pascua en diez días. Esta pieza frena esa fantasía con rutas honestas, avión vs night bus, visas por pasaporte y un estimado que salta cuando sumas Isla de Pascua.
 
 ## Stack
 

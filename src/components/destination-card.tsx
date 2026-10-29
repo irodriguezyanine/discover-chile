@@ -4,6 +4,7 @@ import type { Destination } from "@/data/types";
 import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/en";
 import { pick } from "@/i18n/loc";
+import { ChileFlag } from "@/components/chile-flag";
 
 export function DestinationCard({
   destination,
@@ -27,7 +28,8 @@ export function DestinationCard({
           className="object-cover transition duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, 33vw"
         />
-        <span className="absolute left-4 top-4 rounded-full bg-night/70 px-3 py-1 text-xs uppercase tracking-wider text-cream">
+        <span className="absolute left-4 top-4 flex items-center gap-2 rounded-full bg-night/70 py-1 pl-1.5 pr-3 text-xs uppercase tracking-wider text-cream">
+          <ChileFlag variant="circle" className="size-4 ring-1 ring-white/40" />
           {pick(destination.region, locale)}
         </span>
       </div>

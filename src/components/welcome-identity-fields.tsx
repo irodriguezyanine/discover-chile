@@ -207,9 +207,6 @@ export function WelcomeIdentityFields({
         <span className="mt-2 block font-display text-2xl leading-tight">
           {desk.phoneNameQ}
         </span>
-        <span className="mt-1 block text-sm text-ink-soft">
-          {desk.phoneNameHint}
-        </span>
         <input
           value={name}
           onChange={(event) => onName(event.target.value.slice(0, 32))}

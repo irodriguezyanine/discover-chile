@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Menu, Minus, X } from "lucide-react";
 import type { Messages } from "@/i18n/en";
 import type { Locale } from "@/i18n/config";
@@ -28,23 +28,16 @@ export function SiteHeader({
   messages: Messages;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
   const isHome = pathname.split("/").filter(Boolean).length === 1;
   const { open, openPlanner, minimize } = usePlanner();
   const href = (path: string) => `/${locale}${path}`;
-  const light = isHome && !open && !scrolled;
+  // Home desk is sand/cream — keep ink chrome (recovered light map selector).
+  const light = false;
   const goHomeMinimize = () => {
     // Logo always returns home with the planner closed / minimized.
     minimize();
   };
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 280);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   // Planner owns the viewport — logo / hamburger live only when it is closed.
   if (open) return null;

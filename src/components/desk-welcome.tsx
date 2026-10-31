@@ -89,11 +89,11 @@ function bootIdentity(guest: GuestProfile | null, steps: WelcomeStepId[]) {
 }
 
 function useHasMounted() {
-  return useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false,
-  );
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  return mounted;
 }
 
 function useIsDesktop() {

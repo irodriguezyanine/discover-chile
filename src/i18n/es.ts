@@ -18,7 +18,7 @@ export const es = {
     kicker: "#DiscoverChile",
     title: "Chile no es un viaje. Son varios países en uno.",
     subtitle:
-      "Atacama, valles del vino, lagos, Patagonia, Isla de Pascua. Te preguntamos de dónde vuelas, cuánto puedes gastar y qué Chiles quieres — y la cotización se mueve como un carrito, en tu moneda.",
+      "Atacama, valles del vino, lagos, Patagonia, Isla de Pascua. Te preguntamos de qué país eres, cuánto puedes gastar y qué Chiles quieres — y la cotización se mueve como un carrito, en tu moneda.",
     cta: "Armar mi ruta",
     secondary: "Ver destinos",
   },
@@ -51,7 +51,7 @@ export const es = {
   },
   planner: {
     title: "Arma el viaje",
-    countryQ: "¿Desde qué país viajas?",
+    countryQ: "¿De qué país eres?",
     countryHint: "Esto fija idioma, visa, moneda y si te recomendamos bus o avión.",
     search: "Buscar país",
     popular: "Quienes más visitan",

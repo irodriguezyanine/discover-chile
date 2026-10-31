@@ -193,12 +193,15 @@ export function PlannerProvider({
           return next;
         });
         if (seed.regions?.length) setStep(4);
+      } else if (guest?.onboarded && guest.country) {
+        // Country already answered at welcome — don't ask again.
+        setStep((current) => (current === 0 ? 1 : current));
       }
       setGateOverride(false);
       setOpen(true);
       goHome();
     },
-    [goHome],
+    [goHome, guest],
   );
 
   const minimize = useCallback(() => {
@@ -217,7 +220,8 @@ export function PlannerProvider({
       setGateOverride(false);
       if (next === "plan") {
         setOpen(true);
-        setStep(0);
+        // Welcome already collected country — start at party/days.
+        setStep(1);
       }
       goHome();
     },

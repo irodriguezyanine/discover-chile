@@ -51,7 +51,7 @@ export const it = {
   },
   planner: {
     title: "Costruisci il viaggio",
-    countryQ: "Da dove voli?",
+    countryQ: "Di che paese sei?",
     countryHint: "Fissa lingua, visto, valuta e se ti consigliamo il bus o l'aereo.",
     search: "Cerca paese",
     popular: "Visitatori frequenti",

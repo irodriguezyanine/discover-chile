@@ -53,7 +53,7 @@ export const en = {
   },
   planner: {
     title: "Build the trip",
-    countryQ: "Where are you flying from?",
+    countryQ: "What country are you from?",
     countryHint: "This sets language, visa advice, currency and the way we recommend buses vs planes.",
     search: "Search country",
     popular: "Frequent visitors",

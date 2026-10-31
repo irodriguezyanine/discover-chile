@@ -51,7 +51,7 @@ export const nl = {
   },
   planner: {
     title: "Bouw de reis",
-    countryQ: "Vanuit welk land vlieg je?",
+    countryQ: "Uit welk land kom je?",
     countryHint: "Dit zet taal, visum, valuta en of we bus of vliegtuig aanraden.",
     search: "Land zoeken",
     popular: "Frequente bezoekers",

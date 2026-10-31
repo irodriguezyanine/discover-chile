@@ -51,7 +51,7 @@ export const pt = {
   },
   planner: {
     title: "Monte a viagem",
-    countryQ: "De qual país você viaja?",
+    countryQ: "De qual país você é?",
     countryHint: "Isso define idioma, visto, moeda e se sugerimos ônibus ou avião.",
     search: "Buscar país",
     popular: "Quem mais visita",

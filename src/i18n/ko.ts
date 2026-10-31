@@ -51,7 +51,7 @@ export const ko = {
   },
   planner: {
     title: "여행을 짜기",
-    countryQ: "어디서 날아오나요?",
+    countryQ: "어느 나라에서 오셨나요?",
     countryHint: "언어, 비자, 통화, 버스와 비행기 추천이 여기서 정해집니다.",
     search: "나라 검색",
     popular: "자주 오는 나라",

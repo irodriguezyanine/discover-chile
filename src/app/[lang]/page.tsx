@@ -8,6 +8,7 @@ import { TravelDesk } from "@/components/travel-desk";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { isLocale, type Locale } from "@/i18n/config";
 import { OpenPlannerLink } from "@/components/open-planner-link";
+import { getLiveMapData } from "@/lib/supabase/regions";
 
 export default async function HomePage({
   params,
@@ -18,13 +19,19 @@ export default async function HomePage({
   if (!isLocale(lang)) notFound();
   const locale = lang as Locale;
   const messages = getDictionary(locale);
+  const mapData = await getLiveMapData();
   const featured = destinations.filter((item) =>
     ["atacama", "santiago-wine", "patagonia", "rapanui"].includes(item.id),
   );
 
   return (
     <>
-      <TravelDesk destinations={destinations} locale={locale} messages={messages} />
+      <TravelDesk
+        destinations={destinations}
+        locale={locale}
+        messages={messages}
+        mapData={mapData}
+      />
 
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-12 md:grid-cols-3 md:px-6">
         {[messages.stats.solo, messages.stats.forbes, messages.stats.km].map((item) => (

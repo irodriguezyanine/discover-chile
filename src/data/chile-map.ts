@@ -14,6 +14,8 @@ export type MapPin = {
   x: number;
   y: number;
   label: string;
+  /** Always drawn; non-featured pins appear when their zone is active. */
+  featured?: boolean;
 };
 
 export const mapZones: {
@@ -66,17 +68,25 @@ export const mapZones: {
   },
 ];
 
+/** Static fallback — prefer live pins from Supabase `chile_region_pins`. */
 export const mapPins: MapPin[] = [
-  { id: "arica", zone: "atacama", x: 206, y: 52, label: "Arica" },
-  { id: "spa", zone: "atacama", x: 238, y: 148, label: "San Pedro" },
-  { id: "scl", zone: "santiago-wine", x: 198, y: 248, label: "Santiago" },
-  { id: "valpo", zone: "santiago-wine", x: 164, y: 236, label: "Valparaíso" },
-  { id: "pucon", zone: "lakes", x: 186, y: 352, label: "Pucón" },
-  { id: "castro", zone: "chiloe", x: 132, y: 398, label: "Castro" },
-  { id: "coyhaique", zone: "carretera", x: 178, y: 478, label: "Coyhaique" },
-  { id: "natales", zone: "patagonia", x: 196, y: 628, label: "Natales" },
-  { id: "punta", zone: "patagonia", x: 214, y: 668, label: "Punta Arenas" },
-  { id: "hanga", zone: "rapanui", x: 70, y: 226, label: "Hanga Roa" },
+  { id: "arica", zone: "atacama", x: 206, y: 52, label: "Arica", featured: true },
+  { id: "iquique", zone: "atacama", x: 218, y: 88, label: "Iquique" },
+  { id: "calama", zone: "atacama", x: 244, y: 128, label: "Calama" },
+  { id: "spa", zone: "atacama", x: 238, y: 148, label: "San Pedro", featured: true },
+  { id: "serena", zone: "santiago-wine", x: 170, y: 200, label: "La Serena" },
+  { id: "valpo", zone: "santiago-wine", x: 164, y: 236, label: "Valparaíso", featured: true },
+  { id: "scl", zone: "santiago-wine", x: 198, y: 248, label: "Santiago", featured: true },
+  { id: "farellones", zone: "ski", x: 240, y: 236, label: "Farellones" },
+  { id: "temuco", zone: "lakes", x: 176, y: 320, label: "Temuco" },
+  { id: "pucon", zone: "lakes", x: 186, y: 352, label: "Pucón", featured: true },
+  { id: "varas", zone: "lakes", x: 168, y: 372, label: "Pto. Varas" },
+  { id: "castro", zone: "chiloe", x: 132, y: 398, label: "Castro", featured: true },
+  { id: "coyhaique", zone: "carretera", x: 178, y: 478, label: "Coyhaique", featured: true },
+  { id: "castillo", zone: "carretera", x: 186, y: 510, label: "Cerro Castillo" },
+  { id: "natales", zone: "patagonia", x: 196, y: 628, label: "Natales", featured: true },
+  { id: "punta", zone: "patagonia", x: 214, y: 668, label: "Punta Arenas", featured: true },
+  { id: "hanga", zone: "rapanui", x: 70, y: 226, label: "Hanga Roa", featured: true },
 ];
 
 export const mapCycle: MapZoneId[] = [
@@ -89,3 +99,19 @@ export const mapCycle: MapZoneId[] = [
   "patagonia",
   "rapanui",
 ];
+
+export type LiveMapZone = {
+  id: MapZoneId;
+  d: string;
+  fill: string;
+  island?: boolean;
+  labelEn?: string;
+  labelEs?: string;
+};
+
+export type LiveMapData = {
+  zones: LiveMapZone[];
+  pins: MapPin[];
+  cycle: MapZoneId[];
+  source: "supabase" | "static";
+};

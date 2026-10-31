@@ -15,11 +15,12 @@ import {
 } from "lucide-react";
 import type { Destination } from "@/data/types";
 import { chileanFoods, chileanPhrases, localeTipKey } from "@/data/chile-desk";
-import { mapCycle, type MapZoneId } from "@/data/chile-map";
+import { mapCycle as staticCycle, type MapZoneId } from "@/data/chile-map";
 import type { Locale } from "@/i18n/config";
 import { localeLabels } from "@/i18n/config";
 import type { Messages } from "@/i18n/en";
 import { pick } from "@/i18n/loc";
+import type { LiveMapData } from "@/data/chile-map";
 import { ChileLiveMap } from "@/components/chile-live-map";
 import { ChileFlag } from "@/components/chile-flag";
 import { OpenPlannerLink } from "@/components/open-planner-link";
@@ -30,12 +31,15 @@ export function TravelDesk({
   destinations,
   locale,
   messages,
+  mapData,
 }: {
   destinations: Destination[];
   locale: Locale;
   messages: Messages;
+  mapData?: LiveMapData;
 }) {
-  const [active, setActive] = useState<MapZoneId>("atacama");
+  const cycle = mapData?.cycle?.length ? mapData.cycle : staticCycle;
+  const [active, setActive] = useState<MapZoneId>(cycle[0] ?? "atacama");
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [langIndex, setLangIndex] = useState(0);
 
@@ -65,7 +69,7 @@ export function TravelDesk({
     <div className="bg-night text-cream">
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(196,92,38,0.22),transparent_42%),radial-gradient(circle_at_80%_80%,rgba(142,201,214,0.14),transparent_40%)]" />
-        <div className="relative mx-auto grid max-w-6xl items-start gap-10 px-4 pb-12 pt-28 md:grid-cols-[1.05fr_0.95fr] md:px-6 md:pt-32">
+        <div className="relative mx-auto grid max-w-6xl items-start gap-10 px-4 pb-12 pt-24 md:grid-cols-[1.05fr_0.95fr] md:px-6 md:pt-32">
           <div className="order-2 md:order-1">
             <p className="flex items-center gap-3 text-[11px] uppercase tracking-[0.34em] text-glacier">
               <ChileFlag variant="circle" className="size-7 ring-2 ring-white/50" />
@@ -143,6 +147,7 @@ export function TravelDesk({
               messages={messages}
               active={active}
               onActive={setActive}
+              mapData={mapData}
             />
           </div>
         </div>
@@ -308,7 +313,7 @@ export function TravelDesk({
             {messages.desk.spine}
           </p>
           <div className="mt-4 flex gap-3 overflow-x-auto pb-2">
-            {mapCycle.map((id) => {
+            {cycle.map((id) => {
               const destination = destinations.find((item) => item.id === id);
               if (!destination) return null;
               return (

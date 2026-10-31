@@ -63,7 +63,6 @@ const deskEn = {
   phoneHi: "Hola po",
   holaPo: "Hola po",
   phoneNameQ: "What's your name?",
-  phoneNameHint: "First name is enough. We’ll put it on your desk.",
   phoneNamePh: "Your name",
 };
 
@@ -197,7 +196,6 @@ const deskEs: typeof deskEn = {
   phoneHi: "Hola po",
   holaPo: "Hola po",
   phoneNameQ: "¿Cómo te llamas?",
-  phoneNameHint: "Basta con el nombre. Lo dejamos en tu escritorio.",
   phoneNamePh: "Tu nombre",
 };
 

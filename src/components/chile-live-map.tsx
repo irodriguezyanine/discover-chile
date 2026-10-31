@@ -1,8 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Destination } from "@/data/types";
-import { mapCycle, mapPins, mapZones, type MapZoneId } from "@/data/chile-map";
+import {
+  mapCycle as staticCycle,
+  mapPins as staticPins,
+  mapZones as staticZones,
+  type MapZoneId,
+} from "@/data/chile-map";
+import type { LiveMapData } from "@/data/chile-map";
 import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/en";
 import { pick } from "@/i18n/loc";
@@ -14,23 +20,32 @@ export function ChileLiveMap({
   messages,
   active,
   onActive,
+  mapData,
 }: {
   destinations: Destination[];
   locale: Locale;
   messages: Messages;
   active: MapZoneId;
   onActive: (id: MapZoneId) => void;
+  mapData?: LiveMapData;
 }) {
   const [paused, setPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
 
+  const zoneList = mapData?.zones?.length ? mapData.zones : staticZones;
+  const pinList = mapData?.pins?.length ? mapData.pins : staticPins;
+  const cycle = useMemo(
+    () => (mapData?.cycle?.length ? mapData.cycle : staticCycle),
+    [mapData?.cycle],
+  );
+
   const step = useCallback(
     (delta: number) => {
-      const index = mapCycle.indexOf(active);
-      const next = mapCycle[(index + delta + mapCycle.length) % mapCycle.length];
+      const index = cycle.indexOf(active);
+      const next = cycle[(index + delta + cycle.length) % cycle.length];
       if (next) onActive(next);
     },
-    [active, onActive],
+    [active, cycle, onActive],
   );
 
   useEffect(() => {
@@ -49,7 +64,7 @@ export function ChileLiveMap({
 
   return (
     <div
-      className="relative"
+      className="relative flex min-h-[min(72dvh,640px)] flex-col justify-center md:min-h-0"
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)}
@@ -107,7 +122,7 @@ export function ChileLiveMap({
           strokeOpacity="0.35"
         />
 
-        {mapZones.map((zone) => {
+        {zoneList.map((zone) => {
           const destination = destinations.find((item) => item.id === zone.id);
           const selected = active === zone.id;
           return (
@@ -129,8 +144,9 @@ export function ChileLiveMap({
           );
         })}
 
-        {mapPins.map((pin) => {
+        {pinList.map((pin) => {
           const on = active === pin.zone;
+          if (!on && pin.featured !== true) return null;
           return (
             <g key={pin.id} className="pointer-events-none">
               {on ? (
@@ -166,8 +182,8 @@ export function ChileLiveMap({
       <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-cream/50">
         {paused ? messages.desk.pause : messages.desk.cycle} · 4.300 km
       </p>
-      <div className="mt-4 flex flex-wrap justify-center gap-1.5">
-        {mapCycle.map((id) => {
+      <div className="mt-4 hidden flex-wrap justify-center gap-1.5 md:flex">
+        {cycle.map((id) => {
           const destination = destinations.find((item) => item.id === id);
           if (!destination) return null;
           return (

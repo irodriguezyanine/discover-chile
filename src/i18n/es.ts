@@ -20,6 +20,7 @@ export const es = {
     subtitle:
       "Atacama, valles del vino, lagos, Patagonia, Isla de Pascua. Te preguntamos de qué país eres, cuánto puedes gastar y qué Chiles quieres — y la cotización se mueve como un carrito, en tu moneda.",
     cta: "Armar mi ruta",
+    ctaMyPlan: "Mi plan",
     secondary: "Ver destinos",
   },
   stats: {

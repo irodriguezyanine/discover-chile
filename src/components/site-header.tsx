@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, Minus, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import type { Messages } from "@/i18n/en";
 import type { Locale } from "@/i18n/config";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -30,8 +30,11 @@ export function SiteHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   const isHome = pathname.split("/").filter(Boolean).length === 1;
-  const { open, openPlanner, minimize } = usePlanner();
+  const { open, openPlanner, minimize, closePlanner, planSavedAt } = usePlanner();
+  const hasSavedPlan = Boolean(planSavedAt);
   const href = (path: string) => `/${locale}${path}`;
+  const planHref = href("/plan");
+  const ctaLabel = hasSavedPlan ? messages.hero.ctaMyPlan : messages.hero.cta;
   // Home desk is sand/cream — keep ink chrome (recovered light map selector).
   const light = false;
   const goHomeMinimize = () => {
@@ -103,7 +106,7 @@ export function SiteHeader({
             light={light || (isHome && open)}
           />
           <Link
-            href={href("/plan")}
+            href={planHref}
             onClick={() => {
               if (open) minimize();
             }}
@@ -113,15 +116,27 @@ export function SiteHeader({
           >
             {messages.nav.plan}
           </Link>
-          <button
-            type="button"
-            onClick={() => (open ? minimize() : openPlanner())}
-            className="inline-flex items-center gap-2 rounded-full bg-terracotta px-4 py-2 font-medium text-cream hover:bg-terracotta-deep"
-            aria-label={open ? messages.planner.minimize : messages.hero.cta}
-            title={open ? messages.planner.minimize : messages.hero.cta}
-          >
-            {open ? <Minus size={16} /> : messages.hero.cta}
-          </button>
+          {hasSavedPlan ? (
+            <Link
+              href={planHref}
+              onClick={() => closePlanner()}
+              className="inline-flex items-center gap-2 rounded-full bg-terracotta px-4 py-2 font-medium text-cream hover:bg-terracotta-deep"
+              aria-label={ctaLabel}
+              title={ctaLabel}
+            >
+              {ctaLabel}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openPlanner()}
+              className="inline-flex items-center gap-2 rounded-full bg-terracotta px-4 py-2 font-medium text-cream hover:bg-terracotta-deep"
+              aria-label={ctaLabel}
+              title={ctaLabel}
+            >
+              {ctaLabel}
+            </button>
+          )}
         </nav>
         <button
           type="button"
@@ -139,24 +154,37 @@ export function SiteHeader({
         <div className="mx-4 rounded-3xl bg-night/95 p-5 text-cream shadow-2xl backdrop-blur lg:hidden">
           <div className="flex flex-col gap-3 text-base">
             <Link
-              href={href("/plan")}
+              href={planHref}
               onClick={() => {
                 setMenuOpen(false);
-                if (open) minimize();
+                closePlanner();
               }}
             >
               {messages.nav.plan}
             </Link>
-            <button
-              type="button"
-              className="text-left"
-              onClick={() => {
-                setMenuOpen(false);
-                open ? minimize() : openPlanner();
-              }}
-            >
-              {open ? messages.planner.minimize : messages.hero.cta}
-            </button>
+            {hasSavedPlan ? (
+              <Link
+                href={planHref}
+                className="text-left font-medium text-terracotta"
+                onClick={() => {
+                  setMenuOpen(false);
+                  closePlanner();
+                }}
+              >
+                {ctaLabel}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className="text-left"
+                onClick={() => {
+                  setMenuOpen(false);
+                  openPlanner();
+                }}
+              >
+                {ctaLabel}
+              </button>
+            )}
             {links.map(([key, path]) => (
               <Link
                 key={key}

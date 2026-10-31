@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { Locale } from "@/i18n/config";
 import { getCountryProfile } from "@/data/countries";
 import type { PlannerInput } from "@/lib/estimate";
+import { planStepIndex } from "@/lib/plan-steps";
 
 export const initialPlan: PlannerInput = {
   country: "US",
@@ -158,19 +159,24 @@ export function PlannerProvider({
     setPlan((current) => ({ ...current, ...patch }));
   }, []);
 
-  const hydratePlan = useCallback((seed: Partial<PlannerInput>) => {
-    setPlanTouched(true);
-    setPlan((current) => {
-      const next = { ...current, ...seed };
-      if (seed.country) {
-        next.eco = seed.eco ?? getCountryProfile(seed.country).ecoBias;
+  const hydratePlan = useCallback(
+    (seed: Partial<PlannerInput>) => {
+      setPlanTouched(true);
+      setPlan((current) => {
+        const next = { ...current, ...seed };
+        if (seed.country) {
+          next.eco = seed.eco ?? getCountryProfile(seed.country).ecoBias;
+        }
+        return next;
+      });
+      if (seed.regions?.length) {
+        setStep(planStepIndex("regions", guest));
       }
-      return next;
-    });
-    if (seed.regions?.length) setStep(4);
-    setOpen(true);
-    setGateOverride(false);
-  }, []);
+      setOpen(true);
+      setGateOverride(false);
+    },
+    [guest],
+  );
 
   const goHome = useCallback(() => {
     if (!isHomePath(pathname)) router.push(home);
@@ -192,10 +198,9 @@ export function PlannerProvider({
           }
           return next;
         });
-        if (seed.regions?.length) setStep(4);
-      } else if (guest?.onboarded && guest.country) {
-        // Country already answered at welcome — don't ask again.
-        setStep((current) => (current === 0 ? 1 : current));
+        if (seed.regions?.length) {
+          setStep(planStepIndex("regions", guest));
+        }
       }
       setGateOverride(false);
       setOpen(true);
@@ -220,8 +225,8 @@ export function PlannerProvider({
       setGateOverride(false);
       if (next === "plan") {
         setOpen(true);
-        // Welcome already collected country — start at party/days.
-        setStep(1);
+        // Welcome already collected country — plan steps start at party (index 0).
+        setStep(planStepIndex("party", saved));
       }
       goHome();
     },

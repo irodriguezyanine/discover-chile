@@ -46,6 +46,7 @@ import { ChileFlag } from "@/components/chile-flag";
 import { TravelOptions } from "@/components/travel-options";
 import { usePlanner } from "@/components/planner-context";
 import { cn } from "@/lib/cn";
+import { planStepIds, type PlanStepId } from "@/lib/plan-steps";
 
 const styles: TravelStyle[] = ["backpacker", "mid", "luxury", "camper"];
 const styleIcons = {
@@ -67,7 +68,7 @@ const interestIds: Interest[] = [
 
 export function PlannerWizard({ messages }: { messages: Messages }) {
   const router = useRouter();
-  const { plan, updatePlan, step, setStep, locale } = usePlanner();
+  const { plan, updatePlan, step, setStep, locale, guest } = usePlanner();
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState(false);
   const [rates, setRates] = useState<Record<string, number>>(fallbackRates);
@@ -138,14 +139,22 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const steps = [
-    messages.planner.countryQ,
-    messages.planner.partyQ,
-    messages.planner.budgetQ,
-    messages.planner.interestsQ,
-    messages.planner.regionsQ,
-    messages.planner.bestRoute,
-  ];
+  const stepIds = useMemo(() => planStepIds(guest), [guest]);
+  const titles: Record<PlanStepId, string> = {
+    country: messages.planner.countryQ,
+    party: messages.planner.partyQ,
+    budget: messages.planner.budgetQ,
+    interests: messages.planner.interestsQ,
+    regions: messages.planner.regionsQ,
+    route: messages.planner.bestRoute,
+  };
+  const steps = stepIds.map((id) => titles[id]);
+  const safeStep = Math.min(Math.max(step, 0), Math.max(steps.length - 1, 0));
+  const activeId = stepIds[safeStep] ?? "party";
+
+  useEffect(() => {
+    if (step !== safeStep) setStep(safeStep);
+  }, [step, safeStep, setStep]);
 
   const nudge = (key: "travelers" | "days", delta: number, min: number, max: number) => {
     updatePlan({ [key]: Math.min(max, Math.max(min, plan[key] + delta)) });
@@ -156,35 +165,33 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="flex min-h-full flex-col px-5 py-5 md:px-8 md:py-7">
-          <ol className="flex gap-1.5">
-            {steps.map((_, index) => (
-              <li key={index} className="flex-1">
+          <ol className="flex gap-1.5" aria-label={messages.planner.title}>
+            {steps.map((title, index) => (
+              <li key={stepIds[index]} className="flex-1">
                 <button
                   type="button"
                   onClick={() => {
-                    if (index <= step) setStep(index);
+                    if (index <= safeStep) setStep(index);
                   }}
                   className={cn(
                     "h-1.5 w-full rounded-full transition",
-                    index < step
+                    index < safeStep
                       ? "bg-pine"
-                      : index === step
+                      : index === safeStep
                         ? "bg-terracotta"
                         : "bg-sand-deep",
                   )}
-                  aria-label={`${messages.planner.step} ${index + 1}`}
+                  aria-label={title}
+                  aria-current={index === safeStep ? "step" : undefined}
                 />
               </li>
             ))}
           </ol>
-          <p className="mt-5 text-[11px] uppercase tracking-[0.28em] text-terracotta">
-            {messages.planner.step} {step + 1} {messages.planner.of} {steps.length}
-          </p>
-          <h1 className="mt-2 max-w-3xl font-display text-[1.85rem] leading-[1.15] text-ink md:text-4xl">
-            {steps[step]}
+          <h1 className="mt-5 max-w-3xl font-display text-[1.85rem] leading-[1.15] text-ink md:text-4xl">
+            {titles[activeId]}
           </h1>
 
-          {step === 0 ? (
+          {activeId === "country" ? (
             <div className="mt-6">
               <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">
                 {messages.planner.countryHint}
@@ -277,7 +284,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
             </div>
           ) : null}
 
-          {step === 1 ? (
+          {activeId === "party" ? (
             <div className="mt-8 grid gap-4 md:grid-cols-2">
               <div className="rounded-[1.6rem] border border-line bg-white p-6">
                 <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-ink-soft">
@@ -356,7 +363,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
             </div>
           ) : null}
 
-          {step === 2 ? (
+          {activeId === "budget" ? (
             <div className="mt-7">
               <p className="text-sm text-ink-soft">{messages.planner.budgetHint}</p>
               <p className="mt-5 font-display text-5xl tracking-tight">
@@ -432,7 +439,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
             </div>
           ) : null}
 
-          {step === 3 ? (
+          {activeId === "interests" ? (
             <div className="mt-7 flex flex-wrap gap-2">
               {interestIds.map((interest) => {
                 const active = plan.interests.includes(interest);
@@ -461,7 +468,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
             </div>
           ) : null}
 
-          {step === 4 ? (
+          {activeId === "regions" ? (
             <div className="mt-6">
               <p className="text-sm text-ink-soft">{messages.planner.regionsHint}</p>
               <div className="mt-4 grid gap-3">
@@ -549,7 +556,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
             </div>
           ) : null}
 
-          {step === 5 ? (
+          {activeId === "route" ? (
             <div className="mt-6 space-y-4">
               {plan.regions.length === 0 ? (
                 <p>{messages.planner.emptyRegions}</p>
@@ -738,7 +745,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
           ) : null}
           <div className="sticky bottom-0 mt-auto flex items-center justify-between gap-3 border-t border-line bg-cream/95 pt-4 pb-1 backdrop-blur">
             <div className="min-w-0">
-              {step > 0 ? (
+              {safeStep > 0 ? (
                 <button
                   type="button"
                   onClick={() => setStep((value) => value - 1)}
@@ -752,7 +759,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                 </p>
               )}
             </div>
-            {step < steps.length - 1 ? (
+            {safeStep < steps.length - 1 ? (
               <button
                 type="button"
                 onClick={() => setStep((value) => value + 1)}

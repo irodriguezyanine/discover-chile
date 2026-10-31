@@ -65,7 +65,7 @@ export default async function LangLayout({
 
   return (
     <div
-      className={`${outfit.variable} ${fraunces.variable} flex min-h-dvh flex-col bg-sand font-sans text-ink`}
+      className={`${outfit.variable} ${fraunces.variable} flex min-h-dvh flex-col bg-transparent font-sans text-ink`}
     >
       <PlannerProvider locale={locale}>
         <CurrencyProvider>

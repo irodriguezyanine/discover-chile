@@ -167,17 +167,20 @@ h3,
   cursor: pointer;
 }
 
-.welcome-screen {
+.welcome-screen,
+.desk-screen {
   isolation: isolate;
 }
 
-.welcome-bg-photo {
+.welcome-bg-photo,
+.desk-bg-photo {
   /* Avoid CSS filter/scale — they force expensive continuous paints under the form. */
   opacity: 0.42;
   will-change: auto;
 }
 
-.welcome-bg-wash {
+.welcome-bg-wash,
+.desk-bg-wash {
   background:
     radial-gradient(
       95% 70% at 50% 45%,
@@ -207,11 +210,13 @@ h3,
 }
 
 @media (max-width: 767px) {
-  .welcome-bg-photo {
+  .welcome-bg-photo,
+  .desk-bg-photo {
     opacity: 0.38;
   }
 
-  .welcome-bg-wash {
+  .welcome-bg-wash,
+  .desk-bg-wash {
     background:
       radial-gradient(
         120% 58% at 50% 40%,

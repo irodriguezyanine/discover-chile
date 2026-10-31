@@ -19,8 +19,14 @@ import {
   WelcomeLanguageStep,
   WelcomeNameStep,
 } from "@/components/welcome-identity-fields";
+import { JourneyProgress } from "@/components/journey-progress";
 import { persistCursor } from "@/data/cursors";
 import { usePlanner, type GuestProfile } from "@/components/planner-context";
+import {
+  journeyStepCount,
+  welcomeProgressIndex,
+  welcomeStepsForViewport,
+} from "@/lib/journey-steps";
 
 const DRAFT_KEY = "discoverchile.identity.draft";
 
@@ -31,21 +37,6 @@ type Draft = {
   step?: WelcomeStepId;
   currencyTouched?: boolean;
 };
-
-const MOBILE_STEPS: WelcomeStepId[] = [
-  "language",
-  "name",
-  "country",
-  "currency",
-];
-
-const DESKTOP_STEPS: WelcomeStepId[] = [
-  "language",
-  "cursor",
-  "name",
-  "country",
-  "currency",
-];
 
 function readDraft(): Draft | null {
   try {
@@ -154,7 +145,7 @@ function DeskWelcomeForm({
   const desk = messages.desk;
   const alreadyOnboarded = Boolean(guest?.onboarded);
   const isDesktop = useIsDesktop();
-  const steps = isDesktop ? DESKTOP_STEPS : MOBILE_STEPS;
+  const steps = welcomeStepsForViewport(isDesktop) as WelcomeStepId[];
 
   const bootRef = useRef<ReturnType<typeof bootIdentity> | null>(null);
   if (!bootRef.current) {
@@ -218,6 +209,8 @@ function DeskWelcomeForm({
   const stepIndex = Math.max(0, steps.indexOf(activeStep));
   const isFirst = stepIndex <= 0;
   const isLast = stepIndex >= steps.length - 1;
+  const journeyTotal = journeyStepCount(isDesktop, guest);
+  const journeyCurrent = welcomeProgressIndex(activeStep, isDesktop);
   const nameReady = name.trim().length >= 2;
   const nameStepIndex = steps.indexOf("name");
   const pastName = nameReady && nameStepIndex >= 0 && stepIndex > nameStepIndex;
@@ -292,6 +285,12 @@ function DeskWelcomeForm({
       <WelcomeBackdrop desktop={isDesktop} />
 
       <div className="welcome-panel relative z-10 mx-auto my-auto flex w-full max-w-[34rem] flex-col rounded-[1.7rem] px-5 py-5 ring-1 ring-white/55 md:rounded-[2rem] md:px-8 md:py-8">
+        <JourneyProgress
+          total={journeyTotal}
+          current={journeyCurrent}
+          label={messages.planner.title}
+          className="mb-5 gap-1"
+        />
         {alreadyOnboarded ? (
           <button
             type="button"

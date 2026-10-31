@@ -69,7 +69,10 @@ export function BudgetAmountField({
   currency,
   locale,
   rates,
+  travelers,
   inUsdLabel,
+  perPersonLabel,
+  partyTotalLabel,
   editAria,
   onChangeUsd,
 }: {
@@ -77,7 +80,10 @@ export function BudgetAmountField({
   currency: string;
   locale: string;
   rates: Record<string, number>;
+  travelers: number;
   inUsdLabel: string;
+  perPersonLabel: string;
+  partyTotalLabel: string;
   editAria: string;
   onChangeUsd: (nextUsd: number) => void;
 }) {
@@ -112,8 +118,17 @@ export function BudgetAmountField({
     );
   };
 
+  const partyUsd = budgetUsd * Math.max(1, travelers);
+  const partyLocal = roundLocal(
+    convertFromUsd(partyUsd, currency, rates),
+    currency,
+  );
+
   return (
-    <div className="mt-6">
+    <div className="mt-6 space-y-4">
+      <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-terracotta">
+        {perPersonLabel}
+      </p>
       <label
         htmlFor={inputId}
         className={cn(
@@ -158,10 +173,26 @@ export function BudgetAmountField({
           }}
           className="min-w-0 flex-1 bg-transparent font-display text-4xl leading-none tracking-tight text-ink outline-none tabular-nums md:text-5xl"
         />
+        <span className="hidden shrink-0 text-sm text-ink-soft sm:inline">
+          {perPersonLabel}
+        </span>
       </label>
-      <p className="mt-2 text-sm text-ink-soft">
-        {formatMoney(budgetUsd, "USD", "en")} {inUsdLabel}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-[1.1rem] bg-sand-deep/70 px-3.5 py-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-ink-soft">
+            {partyTotalLabel}
+          </p>
+          <p className="mt-0.5 font-display text-2xl tabular-nums text-ink">
+            {formatMoney(partyLocal, currency, locale)}
+          </p>
+        </div>
+        <p className="text-right text-sm text-ink-soft">
+          {formatMoney(budgetUsd, "USD", "en")} {perPersonLabel}
+          <span className="mt-0.5 block text-xs text-ink-soft/70">
+            {formatMoney(partyUsd, "USD", "en")} {inUsdLabel}
+          </span>
+        </p>
+      </div>
       <input
         type="range"
         min={BUDGET_USD_MIN}
@@ -169,10 +200,10 @@ export function BudgetAmountField({
         step={BUDGET_USD_STEP}
         value={budgetUsd}
         onChange={(event) => onChangeUsd(Number(event.target.value))}
-        className="planner-range mt-5 w-full"
+        className="planner-range w-full"
         aria-label={editAria}
       />
-      <div className="mt-2 flex justify-between text-[11px] uppercase tracking-[0.18em] text-ink-soft/80">
+      <div className="flex justify-between text-[11px] uppercase tracking-[0.18em] text-ink-soft/80">
         <span>{formatMoney(BUDGET_USD_MIN, "USD", "en")}</span>
         <span>{formatMoney(BUDGET_USD_MAX, "USD", "en")}</span>
       </div>

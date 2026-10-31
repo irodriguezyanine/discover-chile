@@ -234,9 +234,10 @@ export function estimateTrip(input: PlannerInput): Estimate {
   };
 }
 
-export function defaultBudget(style: TravelStyle, days: number, travelers: number) {
+/** Approximate budget ceiling per person (not party total). */
+export function defaultBudget(style: TravelStyle, days: number, _travelers = 1) {
   const perDay = { backpacker: 70, mid: 160, luxury: 380, camper: 110 }[style];
-  return perDay * days * travelers;
+  return perDay * days;
 }
 
 export function emptyEstimate(): Estimate {

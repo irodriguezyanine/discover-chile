@@ -22,7 +22,7 @@ export const initialPlan: PlannerInput = {
   country: "US",
   travelers: 2,
   days: 12,
-  budgetUsd: 4000,
+  budgetUsd: 2000,
   budgetFlexible: true,
   style: "mid",
   interests: [],

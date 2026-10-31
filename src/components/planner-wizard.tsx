@@ -1,17 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
   Backpack,
-  Bus,
   CalendarDays,
   Check,
   Gem,
   Hotel,
   Minus,
-  Plane,
   Plus,
   Search,
   Users,
@@ -26,12 +24,8 @@ import {
   popularCountryCodes,
 } from "@/data/countries";
 import { destinations } from "@/data/destinations";
-import { airlines } from "@/data/stays";
-import { activitiesByRegion } from "@/data/activities";
 import { fuelBrands, fuelByRegion } from "@/data/fuel";
-import { sampleRoutes } from "@/data/routes";
-import Link from "next/link";
-import type { Interest, TravelStyle } from "@/data/types";
+import type { TravelStyle } from "@/data/types";
 import {
   emptyEstimate,
   estimateTrip,
@@ -42,14 +36,33 @@ import { interpolate } from "@/lib/interpolate";
 import { QuotePanel } from "@/components/quote-panel";
 import { CountryFlag } from "@/components/country-flag";
 import { ChileFlag } from "@/components/chile-flag";
-import { TravelOptions } from "@/components/travel-options";
 import {
   BudgetAmountField,
   BudgetFlexSwitch,
 } from "@/components/budget-amount-field";
+import { InterestPicker } from "@/components/interest-picker";
+import { JourneyProgress } from "@/components/journey-progress";
+import { MoveOptionsCard } from "@/components/move-options-card";
+import { SuggestedSpine } from "@/components/suggested-spine";
 import { usePlanner } from "@/components/planner-context";
 import { cn } from "@/lib/cn";
+import {
+  journeyStepCount,
+  plannerJourneyIndex,
+} from "@/lib/journey-steps";
 import { planStepIds, type PlanStepId } from "@/lib/plan-steps";
+
+function useIsDesktopViewport() {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const media = window.matchMedia("(min-width: 768px)");
+      media.addEventListener("change", onStoreChange);
+      return () => media.removeEventListener("change", onStoreChange);
+    },
+    () => window.matchMedia("(min-width: 768px)").matches,
+    () => false,
+  );
+}
 
 const styles: TravelStyle[] = ["backpacker", "mid", "luxury", "camper"];
 const styleIcons = {
@@ -58,17 +71,6 @@ const styleIcons = {
   luxury: Gem,
   camper: Van,
 } as const;
-const interestIds: Interest[] = [
-  "beach",
-  "desert",
-  "hike",
-  "wine",
-  "culture",
-  "snow",
-  "parks",
-  "wildlife",
-];
-
 export function PlannerWizard({ messages }: { messages: Messages }) {
   const router = useRouter();
   const { plan, updatePlan, step, setStep, locale, guest } = usePlanner();
@@ -92,27 +94,15 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     () => (plan.regions.length ? estimateTrip({ ...plan, eco }) : emptyEstimate()),
     [plan, eco],
   );
-  const matchingRoutes = useMemo(
-    () =>
-      sampleRoutes.filter((route) => route.regions.some((id) => plan.regions.includes(id))),
-    [plan.regions],
-  );
-  const relatedActs = useMemo(
-    () => plan.regions.flatMap((id) => activitiesByRegion(id)),
-    [plan.regions],
-  );
   const relatedFuel = useMemo(
     () => plan.regions.flatMap((id) => fuelByRegion(id)),
     [plan.regions],
   );
-  const showFuel =
-    plan.style === "camper" ||
-    plan.regions.some((id) =>
-      ["carretera", "lakes", "chiloe", "patagonia", "atacama"].includes(id),
-    );
+  const showFuel = plan.style === "camper";
 
   const localTotal = convertFromUsd(estimate.totalUsd, currency, rates);
-  const budgetLocal = convertFromUsd(plan.budgetUsd, currency, rates);
+  const partyBudgetUsd = plan.budgetUsd * Math.max(1, plan.travelers);
+  const budgetLocal = convertFromUsd(partyBudgetUsd, currency, rates);
   const suggestedLang = countryToLocale[plan.country];
 
   const countries = useMemo(() => {
@@ -143,6 +133,11 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const finishPlan = async () => {
+    await share();
+  };
+
+  const isDesktop = useIsDesktopViewport();
   const stepIds = useMemo(() => planStepIds(guest), [guest]);
   const titles: Record<PlanStepId, string> = {
     country: messages.planner.countryQ,
@@ -151,11 +146,14 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     style: messages.planner.styleQ,
     interests: messages.planner.interestsQ,
     regions: messages.planner.regionsQ,
+    move: messages.planner.moveQ,
     route: messages.planner.bestRoute,
   };
   const steps = stepIds.map((id) => titles[id]);
   const safeStep = Math.min(Math.max(step, 0), Math.max(steps.length - 1, 0));
   const activeId = stepIds[safeStep] ?? "party";
+  const journeyTotal = journeyStepCount(isDesktop, guest);
+  const journeyCurrent = plannerJourneyIndex(activeId, isDesktop, guest);
 
   useEffect(() => {
     if (step !== safeStep) setStep(safeStep);
@@ -170,28 +168,12 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <div className="min-h-0 flex-1 overflow-y-auto">
           <div className="flex min-h-full flex-col px-5 py-5 md:px-8 md:py-7">
-          <ol className="flex gap-1.5" aria-label={messages.planner.title}>
-            {steps.map((title, index) => (
-              <li key={stepIds[index]} className="flex-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (index <= safeStep) setStep(index);
-                  }}
-                  className={cn(
-                    "h-1.5 w-full rounded-full transition",
-                    index < safeStep
-                      ? "bg-pine"
-                      : index === safeStep
-                        ? "bg-terracotta"
-                        : "bg-sand-deep",
-                  )}
-                  aria-label={title}
-                  aria-current={index === safeStep ? "step" : undefined}
-                />
-              </li>
-            ))}
-          </ol>
+          <JourneyProgress
+            total={journeyTotal}
+            current={journeyCurrent}
+            label={messages.planner.title}
+            className="gap-1"
+          />
           <h1 className="mt-5 max-w-3xl font-display text-[1.85rem] leading-[1.15] text-ink md:text-4xl">
             {titles[activeId]}
           </h1>
@@ -384,7 +366,12 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                 currency={currency}
                 locale={locale}
                 rates={rates}
+                travelers={plan.travelers}
                 inUsdLabel={messages.planner.inUsd}
+                perPersonLabel={messages.planner.budgetPerPerson}
+                partyTotalLabel={interpolate(messages.planner.budgetPartyTotal, {
+                  n: String(plan.travelers),
+                })}
                 editAria={messages.planner.budgetEditAria}
                 onChangeUsd={(budgetUsd) => updatePlan({ budgetUsd })}
               />
@@ -443,37 +430,24 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
           ) : null}
 
           {activeId === "interests" ? (
-            <div className="mt-7 flex flex-wrap gap-2">
-              {interestIds.map((interest) => {
-                const active = plan.interests.includes(interest);
-                return (
-                  <button
-                    key={interest}
-                    type="button"
-                    onClick={() =>
-                      updatePlan({
-                        interests: active
-                          ? plan.interests.filter((item) => item !== interest)
-                          : [...plan.interests, interest],
-                      })
-                    }
-                    className={cn(
-                      "rounded-full border px-4 py-2 text-sm transition",
-                      active
-                        ? "border-pine bg-pine text-cream"
-                        : "border-line bg-white hover:border-pine/40",
-                    )}
-                  >
-                    {messages.interests[interest]}
-                  </button>
-                );
-              })}
-            </div>
+            <InterestPicker
+              messages={messages}
+              locale={locale}
+              selected={plan.interests}
+              onChange={(interests) => updatePlan({ interests })}
+            />
           ) : null}
 
           {activeId === "regions" ? (
             <div className="mt-6">
-              <p className="text-sm text-ink-soft">{messages.planner.regionsHint}</p>
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <p className="max-w-xl text-sm leading-relaxed text-ink-soft">
+                  {messages.planner.regionsHint}
+                </p>
+                <span className="rounded-full bg-pine/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-pine">
+                  {plan.regions.length} {messages.planner.addedToPlan}
+                </span>
+              </div>
               <div className="mt-4 grid gap-3">
                 {destinations.map((destination) => {
                   const active = plan.regions.includes(destination.id);
@@ -489,11 +463,14 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                     plan.style === "camper" && !destination.camperFriendly;
                   const matchesInterest =
                     plan.interests.length === 0 ||
-                    destination.interests.some((item) => plan.interests.includes(item));
+                    destination.interests.some((item) =>
+                      plan.interests.includes(item),
+                    );
                   return (
                     <button
                       key={destination.id}
                       type="button"
+                      aria-pressed={active}
                       onClick={() =>
                         updatePlan({
                           regions: active
@@ -502,9 +479,11 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                         })
                       }
                       className={cn(
-                        "flex overflow-hidden rounded-[1.4rem] border bg-white text-left transition",
-                        active ? "border-terracotta shadow-sm" : "border-line/70",
-                        !matchesInterest ? "opacity-55" : "",
+                        "group flex overflow-hidden rounded-[1.45rem] border text-left transition duration-200",
+                        active
+                          ? "border-pine/40 bg-[#14261c] text-cream shadow-[0_14px_34px_rgba(12,40,24,0.28)]"
+                          : "border-line/70 bg-white hover:-translate-y-0.5 hover:border-pine/30 hover:shadow-md",
+                        !matchesInterest && !active ? "opacity-55" : "",
                       )}
                     >
                       <div className="relative h-28 w-24 shrink-0 md:h-32 md:w-40">
@@ -512,51 +491,89 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                           src={destination.image}
                           alt={pick(destination.imageAlt, locale)}
                           fill
-                          className="object-cover"
+                          className={cn(
+                            "object-cover transition",
+                            active ? "brightness-95 saturate-110" : "",
+                          )}
                           sizes="160px"
                         />
                         <ChileFlag
                           variant="circle"
                           className="absolute top-2 left-2 size-6 ring-1 ring-white/70"
                         />
+                        {active ? (
+                          <span className="absolute right-2 bottom-2 rounded-full bg-pine px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-cream">
+                            {messages.planner.addedToPlan}
+                          </span>
+                        ) : null}
                       </div>
                       <div className="flex flex-1 items-start justify-between gap-3 p-4">
                         <div>
-                          <p className="text-[10px] uppercase tracking-[0.2em] text-terracotta">
+                          <p
+                            className={cn(
+                              "text-[10px] uppercase tracking-[0.2em]",
+                              active ? "text-glacier" : "text-terracotta",
+                            )}
+                          >
                             {pick(destination.region, locale)}
                           </p>
                           <p className="font-display text-xl">
                             {pick(destination.name, locale)}
                           </p>
-                          <p className="mt-1 line-clamp-2 text-sm text-ink-soft">
+                          <p
+                            className={cn(
+                              "mt-1 line-clamp-2 text-sm",
+                              active ? "text-cream/70" : "text-ink-soft",
+                            )}
+                          >
                             {pick(destination.summary, locale)}
                           </p>
                           {hidden ? (
-                            <p className="mt-2 text-xs text-wine">
+                            <p className="mt-2 text-xs text-[#f0a3ad]">
                               {messages.styles.camperD}
                             </p>
                           ) : null}
                         </div>
-                        <p className="shrink-0 rounded-full bg-sand px-2.5 py-1 text-xs font-medium tabular-nums">
-                          {delta >= 0 ? "+" : "−"}
-                          {formatMoney(Math.abs(delta), "USD", "en")}
-                        </p>
+                        <div className="flex shrink-0 flex-col items-end gap-2">
+                          <p
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-xs font-medium tabular-nums",
+                              active
+                                ? "bg-white/10 text-cream"
+                                : "bg-sand text-ink",
+                            )}
+                          >
+                            {delta >= 0 ? "+" : "−"}
+                            {formatMoney(Math.abs(delta), "USD", "en")}
+                          </p>
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.14em]",
+                              active
+                                ? "bg-glacier/20 text-glacier"
+                                : "bg-sand-deep text-ink-soft",
+                            )}
+                          >
+                            {active
+                              ? messages.planner.addedToPlan
+                              : messages.planner.addToPlan}
+                          </span>
+                        </div>
                       </div>
                     </button>
                   );
                 })}
               </div>
-              {plan.regions.length ? (
-                <div className="mt-6">
-                  <TravelOptions
-                    zoneId={plan.regions[plan.regions.length - 1] ?? plan.regions[0]}
-                    locale={locale}
-                    messages={messages}
-                    compact
-                  />
-                </div>
-              ) : null}
             </div>
+          ) : null}
+
+          {activeId === "move" ? (
+            <MoveOptionsCard
+              messages={messages}
+              locale={locale}
+              estimate={estimate}
+              eco={eco}
+            />
           ) : null}
 
           {activeId === "route" ? (
@@ -578,121 +595,68 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                       {messages.planner.warningAmbition}
                     </p>
                   ) : null}
-                  {plan.style === "camper" && plan.regions.includes("rapanui") ? (
-                    <p className="rounded-2xl bg-wine/10 px-4 py-3 text-sm text-wine">
-                      {messages.planner.rapanuiRules}
-                    </p>
-                  ) : null}
-                  {matchingRoutes.length ? (
-                    <div className="space-y-3">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-ink-soft">
-                        {messages.planner.bestRoute}
-                      </p>
-                      {matchingRoutes.slice(0, 3).map((route) => (
-                        <Link
-                          key={route.id}
-                          href={`/${locale}/routes/${route.slug}`}
-                          className="block rounded-[1.4rem] border border-line bg-white p-4 hover:border-terracotta"
-                        >
-                          <p className="text-xs uppercase tracking-wider text-terracotta">
-                            {route.days} {messages.common.days} · {route.km} {messages.routes.km}
+                  {plan.style === "camper" ? (
+                    <>
+                      <SuggestedSpine
+                        messages={messages}
+                        locale={locale}
+                        regionIds={plan.regions}
+                        days={plan.days}
+                        onChangeRegions={(regions) => updatePlan({ regions })}
+                        onChangeDays={(days) => updatePlan({ days })}
+                      />
+                      {showFuel ? (
+                        <div className="rounded-[1.4rem] bg-sand p-5">
+                          <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
+                            {messages.planner.apps}
                           </p>
-                          <p className="mt-1 font-display text-xl">{pick(route.name, locale)}</p>
-                          <p className="mt-1 line-clamp-2 text-sm text-ink-soft">
-                            {pick(route.summary, locale)}
-                          </p>
-                          <p className="mt-2 text-sm text-terracotta">{messages.planner.openRoute}</p>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : null}
-                  {showFuel ? (
-                    <div className="rounded-[1.4rem] bg-sand p-5">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
-                        {messages.planner.apps}
-                      </p>
-                      <p className="mt-2 text-sm text-ink-soft">{messages.planner.fuelNote}</p>
-                      <ul className="mt-3 space-y-2 text-sm">
-                        {fuelBrands.map((brand) => (
-                          <li key={brand.id} className="flex flex-wrap items-baseline justify-between gap-2">
-                            <span>
-                              <strong>{brand.name}</strong> · {brand.appName}
-                            </span>
-                            <a
-                              href={brand.app}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-terracotta hover:underline"
-                            >
-                              {messages.common.openApp}
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                      {relatedFuel.length ? (
-                        <p className="mt-4 text-xs uppercase tracking-wider text-ink-soft">
-                          {messages.planner.fuelStops} · {relatedFuel.length}
-                        </p>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  {relatedActs.length ? (
-                    <div>
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-ink-soft">
-                        {messages.planner.relatedActs}
-                      </p>
-                      <ul className="mt-2 space-y-2 text-sm">
-                        {relatedActs.slice(0, 4).map((activity) => (
-                          <li key={activity.id}>
-                            <Link
-                              href={`/${locale}/activities#${activity.kind}`}
-                              className="font-medium text-terracotta hover:underline"
-                            >
-                              {pick(activity.name, locale)}
-                            </Link>
-                            <span className="text-ink-soft">
-                              {" "}
-                              · {activity.operators.length} {messages.routes.providers}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                  <ol className="space-y-3">
-                    {estimate.allocation.map((item, index) => {
-                      const destination = destinations.find((entry) => entry.id === item.id);
-                      const leg = estimate.legs.find((entry) => entry.to === item.id);
-                      if (!destination) return null;
-                      return (
-                        <li
-                          key={item.id}
-                          className="rounded-[1.4rem] border border-line bg-white p-4"
-                        >
-                          {leg ? (
-                            <p className="mb-2 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-terracotta">
-                              {leg.mode === "flight" ? (
-                                <Plane size={12} />
-                              ) : (
-                                <Bus size={12} />
-                              )}
-                              {leg.mode === "flight"
-                                ? messages.planner.flyHere
-                                : messages.planner.takeBus}{" "}
-                              · {leg.hours}
-                              {messages.common.hours} · {formatMoney(leg.usd, "USD", "en")}
+                          <p className="mt-2 text-sm text-ink-soft">{messages.planner.fuelNote}</p>
+                          <ul className="mt-3 space-y-2 text-sm">
+                            {fuelBrands.map((brand) => (
+                              <li key={brand.id} className="flex flex-wrap items-baseline justify-between gap-2">
+                                <span>
+                                  <strong>{brand.name}</strong> · {brand.appName}
+                                </span>
+                                <a
+                                  href={brand.app}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-terracotta hover:underline"
+                                >
+                                  {messages.common.openApp}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                          {relatedFuel.length ? (
+                            <p className="mt-4 text-xs uppercase tracking-wider text-ink-soft">
+                              {messages.planner.fuelStops} · {relatedFuel.length}
                             </p>
                           ) : null}
-                          <p className="font-display text-2xl">
-                            {index + 1}. {pick(destination.name, locale)}
-                          </p>
-                          <p className="text-sm text-ink-soft">
-                            {item.days} {messages.common.days} · {pick(destination.why, locale)}
-                          </p>
-                        </li>
-                      );
-                    })}
-                  </ol>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : (
+                    <ol className="space-y-3">
+                      {estimate.allocation.map((item, index) => {
+                        const destination = destinations.find((entry) => entry.id === item.id);
+                        if (!destination) return null;
+                        return (
+                          <li
+                            key={item.id}
+                            className="rounded-[1.4rem] border border-line bg-white p-4"
+                          >
+                            <p className="font-display text-2xl">
+                              {index + 1}. {pick(destination.name, locale)}
+                            </p>
+                            <p className="text-sm text-ink-soft">
+                              {item.days} {messages.common.days} · {pick(destination.why, locale)}
+                            </p>
+                          </li>
+                        );
+                      })}
+                    </ol>
+                  )}
                   <div className="rounded-[1.4rem] bg-pine p-5 text-cream">
                     <p className="text-[11px] uppercase tracking-[0.22em] text-glacier">
                       {messages.planner.visa}
@@ -717,30 +681,13 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                       {messages.tips[profile.tipKey as keyof typeof messages.tips] ??
                         messages.tips.generic}
                     </p>
-                    {plan.regions.includes("rapanui") ? (
-                      <p className="mt-4 text-sm text-glacier">
-                        {messages.planner.rapanuiRules}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.22em] text-ink-soft">
-                      {messages.planner.airlines}
-                    </p>
-                    <ul className="mt-2 space-y-2 text-sm">
-                      {airlines.map((airline) => (
-                        <li key={airline.id}>
-                          <strong>{airline.name}.</strong> {pick(airline.note, locale)}
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                   <button
                     type="button"
-                    onClick={share}
-                    className="rounded-full bg-night px-5 py-3 text-cream"
+                    onClick={finishPlan}
+                    className="w-full rounded-full bg-night px-5 py-3.5 text-sm font-medium text-cream md:w-auto"
                   >
-                    {copied ? messages.planner.copied : messages.planner.share}
+                    {copied ? messages.planner.planSaved : messages.planner.finishPlan}
                   </button>
                 </>
               )}
@@ -771,9 +718,13 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                 {messages.planner.next}
               </button>
             ) : (
-              <p className="font-display text-xl lg:hidden">
-                {formatMoney(localTotal, currency, locale)}
-              </p>
+              <button
+                type="button"
+                onClick={finishPlan}
+                className="rounded-full bg-night px-5 py-2.5 text-sm font-medium text-cream hover:bg-night/90"
+              >
+                {copied ? messages.planner.planSaved : messages.planner.finishPlan}
+              </button>
             )}
           </div>
           </div>

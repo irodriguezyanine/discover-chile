@@ -72,7 +72,7 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
           aria-modal="true"
           aria-label={messages.planner.windowTitle}
           className={cn(
-            "absolute top-[4.6rem] right-3 bottom-3 left-3 flex max-w-6xl flex-col overflow-hidden rounded-[1.75rem] bg-cream shadow-[0_40px_80px_rgba(8,20,16,0.45)] md:right-6 md:left-6 md:mx-auto",
+            "absolute inset-x-0 top-0 bottom-0 flex max-w-6xl flex-col overflow-hidden bg-cream shadow-[0_40px_80px_rgba(8,20,16,0.45)] md:inset-x-6 md:top-[4.6rem] md:bottom-3 md:mx-auto md:rounded-[1.75rem]",
             open ? "planner-window opacity-100" : "opacity-0",
           )}
         >
@@ -80,10 +80,10 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
             <div className="flex min-w-0 items-center gap-3">
               <ChileFlag
                 variant="circle"
-                className="size-9 shrink-0 ring-2 ring-white/80 shadow-md"
+                className="hidden size-9 shrink-0 ring-2 ring-white/80 shadow-md md:block"
               />
               <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-[0.28em] text-glacier">
+                <p className="hidden text-[10px] uppercase tracking-[0.28em] text-glacier md:block">
                   Discover Chile
                 </p>
                 <p className="truncate font-display text-lg leading-tight md:text-xl">

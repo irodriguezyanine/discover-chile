@@ -10,6 +10,7 @@ export const PLAN_STEP_IDS = [
   "style",
   "interests",
   "regions",
+  "move",
   "route",
 ] as const;
 

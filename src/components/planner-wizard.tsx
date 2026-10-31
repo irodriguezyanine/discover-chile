@@ -71,7 +71,8 @@ const styleIcons = {
 } as const;
 export function PlannerWizard({ messages }: { messages: Messages }) {
   const router = useRouter();
-  const { plan, updatePlan, step, setStep, locale, guest, minimize } = usePlanner();
+  const { plan, updatePlan, step, setStep, locale, guest, saveAndShowProfile } =
+    usePlanner();
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState(false);
   const [rates, setRates] = useState<Record<string, number>>(fallbackRates);
@@ -121,14 +122,19 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     url.searchParams.set("r", plan.regions.join(","));
     url.searchParams.set("i", plan.interests.join(","));
     url.searchParams.set("eco", eco ? "1" : "0");
-    await navigator.clipboard.writeText(url.toString());
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(url.toString());
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard may be blocked; profile still opens */
+    }
   };
 
   const finishPlan = async () => {
     await share();
-    minimize();
+    // Close wizard modal and land on the editable plan profile / agenda.
+    saveAndShowProfile();
   };
 
   const isDesktop = useIsDesktopViewport();

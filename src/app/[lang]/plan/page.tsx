@@ -1,22 +1,34 @@
-import { notFound, redirect } from "next/navigation";
-import { isLocale } from "@/i18n/config";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { PlanProfile } from "@/components/plan-profile";
+import { getDictionary } from "@/i18n/get-dictionary";
+import { isLocale, type Locale } from "@/i18n/config";
 
 export const instant = false;
 
-export default async function PlanPage({
+export async function generateMetadata({
   params,
-  searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const { lang } = await params;
+  if (!isLocale(lang)) notFound();
+  const messages = getDictionary(lang);
+  return {
+    title: messages.planDesk.title,
+    description: messages.planDesk.lead,
+  };
+}
+
+export default async function PlanPage({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
-  const query = await searchParams;
-  const qs = new URLSearchParams();
-  qs.set("plan", "1");
-  for (const [key, value] of Object.entries(query)) {
-    if (typeof value === "string" && value && key !== "plan") qs.set(key, value);
-  }
-  redirect(`/${lang}?${qs.toString()}`);
+  const locale = lang as Locale;
+  const messages = getDictionary(locale);
+
+  return <PlanProfile locale={locale} messages={messages} />;
 }

@@ -34,6 +34,10 @@ export function SiteHeader({
   const { open, openPlanner, minimize } = usePlanner();
   const href = (path: string) => `/${locale}${path}`;
   const light = isHome && !open && !scrolled;
+  const goHomeMinimize = () => {
+    // Logo always returns home with the planner closed / minimized.
+    minimize();
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 280);
@@ -60,13 +64,16 @@ export function SiteHeader({
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 md:px-6">
         <Link
           href={href("/")}
-          onClick={() => {
-            if (open) minimize();
+          onClick={(event) => {
+            event.preventDefault();
+            goHomeMinimize();
           }}
           className={cn(
             "flex items-center gap-3 font-display text-xl tracking-tight",
             light || (isHome && open) ? "text-cream" : "text-ink",
           )}
+          aria-label={`${messages.brand} — ${messages.nav.home}`}
+          title={messages.nav.home}
         >
           <ChileFlag
             variant="circle"
@@ -75,7 +82,7 @@ export function SiteHeader({
               light || (isHome && open) ? "ring-2 ring-white/85" : "ring-2 ring-black/10",
             )}
           />
-          Discover Chile
+          {messages.brand}
         </Link>
         <nav
           className={cn(
@@ -102,14 +109,25 @@ export function SiteHeader({
             label={messages.common.language}
             light={light || (isHome && open)}
           />
+          <Link
+            href={href("/plan")}
+            onClick={() => {
+              if (open) minimize();
+            }}
+            className={
+              light || (isHome && open) ? "hover:text-glacier" : "hover:text-terracotta"
+            }
+          >
+            {messages.nav.plan}
+          </Link>
           <button
             type="button"
             onClick={() => (open ? minimize() : openPlanner())}
             className="inline-flex items-center gap-2 rounded-full bg-terracotta px-4 py-2 font-medium text-cream hover:bg-terracotta-deep"
-            aria-label={open ? messages.planner.minimize : messages.nav.plan}
-            title={open ? messages.planner.minimize : messages.nav.plan}
+            aria-label={open ? messages.planner.minimize : messages.hero.cta}
+            title={open ? messages.planner.minimize : messages.hero.cta}
           >
-            {open ? <Minus size={16} /> : messages.nav.plan}
+            {open ? <Minus size={16} /> : messages.hero.cta}
           </button>
         </nav>
         <button
@@ -127,6 +145,15 @@ export function SiteHeader({
       {menuOpen ? (
         <div className="mx-4 rounded-3xl bg-night/95 p-5 text-cream shadow-2xl backdrop-blur lg:hidden">
           <div className="flex flex-col gap-3 text-base">
+            <Link
+              href={href("/plan")}
+              onClick={() => {
+                setMenuOpen(false);
+                if (open) minimize();
+              }}
+            >
+              {messages.nav.plan}
+            </Link>
             <button
               type="button"
               className="text-left"
@@ -135,7 +162,7 @@ export function SiteHeader({
                 open ? minimize() : openPlanner();
               }}
             >
-              {open ? messages.planner.minimize : messages.nav.plan}
+              {open ? messages.planner.minimize : messages.hero.cta}
             </button>
             {links.map(([key, path]) => (
               <Link

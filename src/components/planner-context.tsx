@@ -4,6 +4,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   useSyncExternalStore,
@@ -52,11 +53,16 @@ type PlannerContextValue = {
   locale: Locale;
   gate: boolean;
   guest: GuestProfile | null;
+  planSavedAt: number | null;
   setStep: Dispatch<SetStateAction<number>>;
   updatePlan: (patch: Partial<PlannerInput>) => void;
-  hydratePlan: (seed: Partial<PlannerInput>) => void;
+  hydratePlan: (seed: Partial<PlannerInput>, options?: { open?: boolean }) => void;
   openPlanner: (seed?: Partial<PlannerInput>) => void;
   minimize: () => void;
+  /** Close the wizard modal without navigating away (e.g. stay on /plan). */
+  closePlanner: () => void;
+  /** Persist plan, close wizard, open the editable plan profile desk. */
+  saveAndShowProfile: () => void;
   completeOnboarding: (
     profile: GuestProfile,
     next?: "home" | "plan",
@@ -68,9 +74,46 @@ const PlannerContext = createContext<PlannerContextValue | null>(null);
 
 const GUEST_KEY = "discoverchile.guest";
 const GATE_KEY = "discoverchile.gate";
+const PLAN_KEY = "discoverchile.plan";
+const PLAN_SAVED_KEY = "discoverchile.planSavedAt";
 
 function isHomePath(pathname: string) {
   return pathname.split("/").filter(Boolean).length === 1;
+}
+
+function isPlanPath(pathname: string) {
+  const parts = pathname.split("/").filter(Boolean);
+  return parts.length === 2 && parts[1] === "plan";
+}
+
+function readStoredPlan(): PlannerInput | null {
+  try {
+    const raw = window.localStorage.getItem(PLAN_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as PlannerInput;
+  } catch {
+    return null;
+  }
+}
+
+function readPlanSavedAt(): number | null {
+  try {
+    const raw = window.localStorage.getItem(PLAN_SAVED_KEY);
+    if (!raw) return null;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredPlan(plan: PlannerInput, savedAt = Date.now()) {
+  try {
+    window.localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
+    window.localStorage.setItem(PLAN_SAVED_KEY, String(savedAt));
+  } catch {
+    /* ignore quota / private mode */
+  }
 }
 
 let cachedGuestRaw: string | null = null;
@@ -144,7 +187,10 @@ export function PlannerProvider({
     GuestProfile | null | undefined
   >(undefined);
   const [planTouched, setPlanTouched] = useState(false);
+  const [planSavedAt, setPlanSavedAt] = useState<number | null>(null);
+  const [storageHydrated, setStorageHydrated] = useState(false);
   const home = `/${locale}`;
+  const planHref = `/${locale}/plan`;
 
   const guest = guestOverride === undefined ? storedGuest : guestOverride;
   const gate = gateOverride ?? storedGate;
@@ -157,26 +203,44 @@ export function PlannerProvider({
       ? guestSeedPlan
       : plan;
 
+  // Restore a previously saved plan once on the client.
+  useEffect(() => {
+    if (storageHydrated) return;
+    setStorageHydrated(true);
+    const stored = readStoredPlan();
+    const savedAt = readPlanSavedAt();
+    if (savedAt) setPlanSavedAt(savedAt);
+    if (!stored) return;
+    setPlanTouched(true);
+    setPlan({ ...initialPlan, ...stored, stopHighlights: stored.stopHighlights ?? {} });
+  }, [storageHydrated]);
+
   const updatePlan = useCallback((patch: Partial<PlannerInput>) => {
     setPlanTouched(true);
-    setPlan((current) => ({ ...current, ...patch }));
+    setPlan((current) => {
+      const next = { ...current, ...patch };
+      writeStoredPlan(next, readPlanSavedAt() ?? Date.now());
+      return next;
+    });
   }, []);
 
   const hydratePlan = useCallback(
-    (seed: Partial<PlannerInput>) => {
+    (seed: Partial<PlannerInput>, options?: { open?: boolean }) => {
       setPlanTouched(true);
       setPlan((current) => {
         const next = { ...current, ...seed };
         if (seed.country) {
           next.eco = seed.eco ?? getCountryProfile(seed.country).ecoBias;
         }
+        if (!next.stopHighlights) next.stopHighlights = {};
+        writeStoredPlan(next);
         return next;
       });
       if (seed.regions?.length) {
         setStep(planStepIndex("regions", guest));
       }
-      setOpen(true);
       setGateOverride(false);
+      if (options?.open !== false) setOpen(true);
     },
     [guest],
   );
@@ -199,6 +263,7 @@ export function PlannerProvider({
           if (seed.country) {
             next.eco = seed.eco ?? getCountryProfile(seed.country).ecoBias;
           }
+          writeStoredPlan(next);
           return next;
         });
         if (seed.regions?.length) {
@@ -212,10 +277,22 @@ export function PlannerProvider({
     [goHome, guest],
   );
 
+  const closePlanner = useCallback(() => {
+    setOpen(false);
+  }, []);
+
   const minimize = useCallback(() => {
     setOpen(false);
     goHome();
   }, [goHome]);
+
+  const saveAndShowProfile = useCallback(() => {
+    const savedAt = Date.now();
+    writeStoredPlan(planValue, savedAt);
+    setPlanSavedAt(savedAt);
+    setOpen(false);
+    if (!isPlanPath(pathname)) router.push(planHref);
+  }, [pathname, planHref, planValue, router]);
 
   const completeOnboarding = useCallback(
     (profile: GuestProfile, next: "home" | "plan" = "home") => {
@@ -257,11 +334,14 @@ export function PlannerProvider({
       locale,
       gate,
       guest,
+      planSavedAt,
       setStep,
       updatePlan,
       hydratePlan,
       openPlanner,
       minimize,
+      closePlanner,
+      saveAndShowProfile,
       completeOnboarding,
       skipGate,
     }),
@@ -272,10 +352,13 @@ export function PlannerProvider({
       locale,
       gate,
       guest,
+      planSavedAt,
       updatePlan,
       hydratePlan,
       openPlanner,
       minimize,
+      closePlanner,
+      saveAndShowProfile,
       completeOnboarding,
       skipGate,
     ],

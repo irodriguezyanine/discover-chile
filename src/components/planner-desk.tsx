@@ -1,16 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Maximize2, Minus } from "lucide-react";
 import type { Messages } from "@/i18n/en";
-import type { TravelStyle } from "@/data/types";
 import { countryName } from "@/data/countries";
 import { ChileFlag } from "@/components/chile-flag";
 import { CountryFlag } from "@/components/country-flag";
 import { PlannerWizard } from "@/components/planner-wizard";
 import { usePlanner } from "@/components/planner-context";
-import type { PlannerInput } from "@/lib/estimate";
+import { seedFromSearchParams } from "@/lib/plan-seed";
 import { cn } from "@/lib/cn";
 
 export function PlannerDesk({ messages }: { messages: Messages }) {
@@ -20,6 +20,7 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
   const router = useRouter();
   const hydrated = useRef(false);
   const [mounted, setMounted] = useState(false);
+  const home = `/${locale}`;
 
   useEffect(() => {
     setMounted(true);
@@ -27,10 +28,15 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
 
   useEffect(() => {
     if (hydrated.current) return;
-    const seed = seedFromParams(searchParams);
+    const seed = seedFromSearchParams(searchParams);
     if (!seed) return;
     hydrated.current = true;
-    hydratePlan(seed);
+    const forceOpen = searchParams.get("plan") === "1";
+    const parts = pathname.split("/").filter(Boolean);
+    const onPlanPage = parts.length === 2 && parts[1] === "plan";
+    // /plan share links land on the profile desk (wizard stays closed).
+    // ?plan=1 on other routes still opens the wizard (legacy deep links).
+    hydratePlan(seed, { open: forceOpen && !onPlanPage });
     router.replace(pathname);
   }, [hydratePlan, pathname, router, searchParams]);
 
@@ -77,11 +83,22 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
           )}
         >
           <div className="flex items-center justify-between gap-3 border-b border-line bg-night px-4 py-3 text-cream md:px-5">
-            <div className="min-w-0">
-              <p className="truncate font-display text-lg leading-tight md:text-xl">
-                {messages.planner.windowTitle}
-              </p>
-            </div>
+            <Link
+              href={home}
+              onClick={(event) => {
+                event.preventDefault();
+                minimize();
+              }}
+              className="flex min-w-0 items-center gap-3 font-display text-lg leading-tight tracking-tight text-cream md:text-xl"
+              aria-label={`${messages.brand} — ${messages.nav.home}`}
+              title={messages.nav.home}
+            >
+              <ChileFlag
+                variant="circle"
+                className="size-9 shrink-0 ring-2 ring-white/70 shadow-[0_6px_16px_rgba(8,20,16,0.35)]"
+              />
+              <span className="truncate">{messages.brand}</span>
+            </Link>
             <button
               type="button"
               onClick={minimize}
@@ -127,52 +144,4 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
       ) : null}
     </>
   );
-}
-
-function readNumber(value: string | null) {
-  if (value == null || value === "") return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
-}
-
-function seedFromParams(
-  params: URLSearchParams,
-): Partial<PlannerInput> | null {
-  const country = params.get("c") || undefined;
-  const days = readNumber(params.get("d"));
-  const travelers = readNumber(params.get("t"));
-  const budgetUsd = readNumber(params.get("b"));
-  const budgetFlexibleParam = params.get("bf");
-  const style = (params.get("s") as TravelStyle | null) || undefined;
-  const regions = params.get("r")?.split(",").filter(Boolean);
-  const interests = params.get("i")?.split(",").filter(Boolean);
-  const eco = params.get("eco");
-  const openFlag = params.get("plan") === "1";
-  if (
-    !openFlag &&
-    !country &&
-    days == null &&
-    travelers == null &&
-    budgetUsd == null &&
-    budgetFlexibleParam == null &&
-    !style &&
-    !regions &&
-    !interests &&
-    !eco
-  ) {
-    return null;
-  }
-  const seed: Partial<PlannerInput> = {};
-  if (country) seed.country = country;
-  if (days != null) seed.days = days;
-  if (travelers != null) seed.travelers = travelers;
-  if (budgetUsd != null) seed.budgetUsd = budgetUsd;
-  if (budgetFlexibleParam === "1") seed.budgetFlexible = true;
-  if (budgetFlexibleParam === "0") seed.budgetFlexible = false;
-  if (style) seed.style = style;
-  if (regions?.length) seed.regions = regions;
-  if (interests?.length) seed.interests = interests;
-  if (eco === "1") seed.eco = true;
-  if (eco === "0") seed.eco = false;
-  return seed;
 }

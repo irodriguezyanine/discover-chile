@@ -33,6 +33,47 @@ export const fallbackRates: Record<string, number> = {
   SGD: 1.34,
 };
 
+export const currencies = [
+  "USD",
+  "EUR",
+  "GBP",
+  "BRL",
+  "ARS",
+  "MXN",
+  "CAD",
+  "AUD",
+  "NZD",
+  "JPY",
+  "CNY",
+  "KRW",
+  "COP",
+  "PEN",
+  "BOB",
+  "UYU",
+  "PYG",
+  "CHF",
+  "SEK",
+  "NOK",
+  "DKK",
+  "PLN",
+  "INR",
+  "ILS",
+  "ZAR",
+  "AED",
+  "SAR",
+  "RUB",
+  "TWD",
+  "HKD",
+  "SGD",
+  "CLP",
+] as const;
+
+export type CurrencyCode = (typeof currencies)[number];
+
+export function isCurrency(value: string): value is CurrencyCode {
+  return (currencies as readonly string[]).includes(value);
+}
+
 export async function fetchUsdRates(): Promise<Record<string, number>> {
   try {
     const response = await fetch("https://open.er-api.com/v6/latest/USD", {

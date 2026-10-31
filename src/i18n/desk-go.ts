@@ -53,6 +53,17 @@ const deskEn = {
   plugD: "C / L adaptor. 220 volts. US hair dryers will cry.",
   moneyD: "Cards work in Santiago. Cash for micros, ferries and Patagonia.",
   more: "The rest of the desk",
+  phoneWelcome: "Welcome to Chile, the best country in Chile.",
+  phoneWelcomeLead: "A desk for the trip. Not a brochure.",
+  deskCursorQ: "Your cursor",
+  deskPlanTrip: "Plan the trip",
+  deskGoHome: "Go to the home",
+  phoneLangQ: "Language",
+  phoneCurrencyQ: "Currency",
+  phoneHi: "Hola",
+  phoneNameQ: "What do we call you?",
+  phoneNameHint: "First name is enough. We’ll put it on your desk.",
+  phoneNamePh: "Your name",
 };
 
 const goEn = {
@@ -175,6 +186,17 @@ const deskEs: typeof deskEn = {
   plugD: "Adaptador C / L. 220 volts. El secador de EE.UU. va a llorar.",
   moneyD: "Las tarjetas sirven en Santiago. Efectivo para micros, ferries y Patagonia.",
   more: "El resto del escritorio",
+  phoneWelcome: "Bienvenido a Chile, el mejor país de Chile",
+  phoneWelcomeLead: "Un escritorio para el viaje. No un folleto.",
+  deskCursorQ: "Tu cursor",
+  deskPlanTrip: "Planificar el viaje",
+  deskGoHome: "Ir al home",
+  phoneLangQ: "Idioma",
+  phoneCurrencyQ: "Moneda",
+  phoneHi: "Hola",
+  phoneNameQ: "¿Cómo te llamai?",
+  phoneNameHint: "Basta con el nombre. Lo dejamos en tu escritorio.",
+  phoneNamePh: "Tu nombre",
 };
 
 const goEs: typeof goEn = {

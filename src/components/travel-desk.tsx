@@ -4,13 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Banknote,
-  Handshake,
-  HandCoins,
-  Languages,
-  Plug,
-  Shirt,
-  Stamp,
+  BedDouble,
+  Footprints,
+  Fuel,
   Utensils,
 } from "lucide-react";
 import type { Destination } from "@/data/types";
@@ -22,10 +18,11 @@ import type { Messages } from "@/i18n/en";
 import { pick } from "@/i18n/loc";
 import type { LiveMapData } from "@/data/chile-map";
 import { ChileLiveMap } from "@/components/chile-live-map";
-import { ChileFlag } from "@/components/chile-flag";
 import { OpenPlannerLink } from "@/components/open-planner-link";
+import { TipsHub } from "@/components/tips-hub";
 import { TravelOptions } from "@/components/travel-options";
 import { cn } from "@/lib/cn";
+import { usePlanner } from "@/components/planner-context";
 
 export function TravelDesk({
   destinations,
@@ -39,9 +36,11 @@ export function TravelDesk({
   mapData?: LiveMapData;
 }) {
   const cycle = mapData?.cycle?.length ? mapData.cycle : staticCycle;
+  const { guest } = usePlanner();
   const [active, setActive] = useState<MapZoneId>(cycle[0] ?? "atacama");
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [langIndex, setLangIndex] = useState(0);
+  const [jump, setJump] = useState<string | null>(null);
 
   const zone = destinations.find((item) => item.id === active) ?? destinations[0];
   const phrase = chileanPhrases[phraseIndex % chileanPhrases.length];
@@ -65,58 +64,144 @@ export function TravelDesk({
     messages.tips[localeTipKey[locale] as keyof typeof messages.tips] ??
     messages.tips.generic;
 
+  const quick = [
+    {
+      id: "walk",
+      label: messages.desk.wantWalk,
+      icon: Footprints,
+      href: `/${locale}/activities`,
+      jump: false,
+    },
+    {
+      id: "stay",
+      label: messages.desk.wantStay,
+      icon: BedDouble,
+      href: `/${locale}/stays`,
+      jump: true,
+    },
+    {
+      id: "eat",
+      label: messages.desk.wantEat,
+      icon: Utensils,
+      href: `/${locale}/stays`,
+      jump: true,
+    },
+    {
+      id: "ride",
+      label: messages.desk.wantRide,
+      icon: Fuel,
+      href: `/${locale}/fuel`,
+      jump: false,
+    },
+  ] as const;
+
   return (
-    <div className="bg-night text-cream">
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(196,92,38,0.22),transparent_42%),radial-gradient(circle_at_80%_80%,rgba(142,201,214,0.14),transparent_40%)]" />
-        <div className="relative mx-auto grid max-w-6xl items-start gap-10 px-4 pb-12 pt-24 md:grid-cols-[1.05fr_0.95fr] md:px-6 md:pt-32">
-          <div className="order-2 md:order-1">
-            <p className="flex items-center gap-3 text-[11px] uppercase tracking-[0.34em] text-glacier">
-              <ChileFlag variant="circle" className="size-7 ring-2 ring-white/50" />
-              {messages.hero.kicker}
+    <div className="bg-sand text-ink">
+      <section className="bg-sand">
+        <div className="mx-auto max-w-6xl px-4 pb-4 pt-24 md:px-6 md:pt-32">
+          <div className="relative">
+            <p className="text-[11px] uppercase tracking-[0.34em] text-terracotta">
+              {guest?.name
+                ? `${messages.desk.phoneHi} ${guest.name}`
+                : messages.desk.holaPo}
             </p>
-            <h1 className="mt-4 font-display text-4xl leading-tight md:text-6xl">
+            <h1 className="mt-3 max-w-3xl font-display text-4xl leading-tight md:text-5xl">
               {messages.desk.heroTitle}
             </h1>
-            <p className="mt-4 max-w-xl text-lg text-cream/75">{messages.desk.heroLead}</p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              {(
-                [
-                  [Stamp, messages.desk.factVisa],
-                  [Languages, messages.desk.factLang],
-                  [Banknote, messages.desk.factMoney],
-                  [Plug, messages.desk.factPlug],
-                ] as const
-              ).map(([Icon, label]) => (
-                <p
-                  key={label}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-sm"
-                >
-                  <Icon size={14} className="text-glacier" />
-                  {label}
-                </p>
+            <p className="mt-3 max-w-2xl text-base text-ink-soft md:text-lg">
+              {messages.desk.heroLead}
+            </p>
+
+            <ul className="mt-5 flex flex-wrap gap-2">
+              {quick.map((item) => (
+                <li key={item.id}>
+                  {item.jump ? (
+                    <Link
+                      href={item.href}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-sm ring-1 ring-black/[0.08] transition hover:bg-sand-deep hover:ring-terracotta/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta"
+                    >
+                      <item.icon size={14} />
+                      {item.label}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (jump === item.id) {
+                          window.location.assign(item.href);
+                          return;
+                        }
+                        setJump(item.id);
+                        window.requestAnimationFrame(() => {
+                          document
+                            .getElementById(`pack-${item.id}`)
+                            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        });
+                      }}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm ring-1 transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-terracotta",
+                        jump === item.id
+                          ? "bg-terracotta text-cream ring-terracotta"
+                          : "bg-white text-ink ring-black/[0.08] hover:bg-sand-deep hover:ring-terracotta/40",
+                      )}
+                    >
+                      <item.icon size={14} />
+                      {item.label}
+                    </button>
+                  )}
+                </li>
               ))}
-            </div>
+            </ul>
+
+            <TipsHub locale={locale} messages={messages} />
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-sand">
+        <div className="mx-auto grid max-w-6xl items-start gap-8 px-4 py-4 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-8">
+          <div>
+            <p className="mb-3 text-sm text-terracotta">
+              {messages.desk.sayHover}
+            </p>
+            <ChileLiveMap
+              destinations={destinations}
+              locale={locale}
+              messages={messages}
+              active={active}
+              onActive={setActive}
+              mapData={mapData}
+              tone="light"
+            />
+          </div>
+
+          <div>
             {zone ? (
-              <article className="mt-8 overflow-hidden rounded-[1.6rem] border border-white/10 bg-white/5">
-                <div className="relative h-36">
+              <article className="mb-16 overflow-hidden rounded-[1.6rem] bg-white ring-1 ring-black/10 sm:mb-0">
+                <div className="relative h-48 md:h-56">
                   <Image
                     src={zone.image}
                     alt={pick(zone.imageAlt, locale)}
                     fill
                     className="object-cover"
-                    sizes="480px"
+                    sizes="640px"
+                    priority
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-night/80 to-transparent" />
-                  <p className="absolute bottom-3 left-4 text-[11px] uppercase tracking-[0.2em] text-glacier">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                  <p className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-sm text-ink">
                     {pick(zone.region, locale)}
                   </p>
+                  <h2 className="absolute bottom-3 left-4 font-display text-3xl text-white md:text-4xl">
+                    {pick(zone.name, locale)}
+                  </h2>
                 </div>
-                <div className="p-5">
-                  <h2 className="font-display text-3xl">{pick(zone.name, locale)}</h2>
-                  <p className="mt-2 text-sm text-cream/70">{pick(zone.summary, locale)}</p>
-                  <p className="mt-3 text-xs uppercase tracking-wider text-terracotta">
-                    {zone.recommendedDays} {messages.dest.rec} · {zone.flightFromSclHours}
+                <div className="p-5 md:p-6">
+                  <p className="text-sm leading-relaxed text-ink-soft">
+                    {pick(zone.summary, locale)}
+                  </p>
+                  <p className="mt-3 text-sm text-ink-soft">
+                    {zone.recommendedDays} {messages.common.days} ·{" "}
+                    {zone.flightFromSclHours}
                     {messages.common.hours} {messages.dest.flight}
                     {zone.busFromSclHours
                       ? ` · ${zone.busFromSclHours}${messages.common.hours} ${messages.dest.bus}`
@@ -125,13 +210,13 @@ export function TravelDesk({
                   <div className="mt-4 flex flex-wrap gap-3">
                     <Link
                       href={`/${locale}/destinations/${zone.slug}`}
-                      className="rounded-full bg-cream px-4 py-2 text-sm text-night"
+                      className="inline-flex h-12 items-center rounded-full bg-ink px-5 text-sm text-cream"
                     >
                       {messages.desk.openZone}
                     </Link>
                     <OpenPlannerLink
                       seed={{ regions: [zone.id] }}
-                      className="rounded-full bg-terracotta px-4 py-2 text-sm text-cream"
+                      className="inline-flex h-12 items-center rounded-full bg-terracotta px-5 text-sm text-cream"
                     >
                       {messages.dest.add}
                     </OpenPlannerLink>
@@ -140,129 +225,18 @@ export function TravelDesk({
               </article>
             ) : null}
           </div>
-          <div className="order-1 md:order-2">
-            <ChileLiveMap
-              destinations={destinations}
-              locale={locale}
-              messages={messages}
-              active={active}
-              onActive={setActive}
-              mapData={mapData}
-            />
-          </div>
         </div>
       </section>
 
-      <section className="border-t border-white/10 bg-night">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 md:px-6">
-          <p className="text-[11px] uppercase tracking-[0.28em] text-glacier">
-            {messages.desk.languagesLive}
-          </p>
-          <p className="font-display text-2xl text-cream" aria-live="polite">
-            {parade[langIndex]?.[1]}
-            <span className="mx-3 text-terracotta">·</span>
-            {phrase.say}
-          </p>
-        </div>
-      </section>
-
-      <section className="bg-sand px-4 py-10 text-ink md:px-6">
+      <section id="pack-ride" className="border-t border-ink/8 px-4 py-10 md:px-6">
         <div className="mx-auto max-w-6xl">
           <TravelOptions zoneId={active} locale={locale} messages={messages} />
         </div>
       </section>
 
-      <section className="bg-sand text-ink">
-        <div className="mx-auto grid max-w-6xl gap-5 px-4 pb-10 md:grid-cols-2 lg:grid-cols-4 md:px-6">
-          <article className="rounded-[1.5rem] bg-cream p-5">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-terracotta">
-              {messages.desk.when}
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-ink-soft">
-              <li>{messages.desk.when1}</li>
-              <li>{messages.desk.when2}</li>
-              <li>{messages.desk.when3}</li>
-              <li>{messages.desk.when4}</li>
-            </ul>
-          </article>
-          <article className="rounded-[1.5rem] bg-cream p-5">
-            <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-terracotta">
-              <HandCoins size={14} />
-              {messages.desk.tipping}
-            </p>
-            <p className="mt-3 font-display text-3xl">10%</p>
-            <p className="mt-2 text-sm text-ink-soft">{messages.desk.tippingD}</p>
-          </article>
-          <article className="rounded-[1.5rem] bg-cream p-5">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-terracotta">
-              {messages.desk.manners}
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-ink-soft">
-              <li>{messages.desk.manners1}</li>
-              <li>{messages.desk.manners2}</li>
-              <li>{messages.desk.manners3}</li>
-            </ul>
-          </article>
-          <article className="rounded-[1.5rem] bg-pine p-5 text-cream">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-glacier">
-              {messages.desk.forYou}
-            </p>
-            <p className="mt-3 text-sm leading-relaxed">{tip}</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="bg-sand text-ink">
-        <div className="mx-auto grid max-w-6xl gap-5 px-4 pb-10 md:grid-cols-3 md:px-6">
-          <article className="rounded-[1.5rem] bg-cream p-5">
-            <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-terracotta">
-              <Handshake size={14} />
-              {messages.desk.greet}
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-ink-soft">
-              <li>{messages.desk.greet1}</li>
-              <li>{messages.desk.greet2}</li>
-              <li>{messages.desk.greet3}</li>
-            </ul>
-          </article>
-          <article className="rounded-[1.5rem] bg-cream p-5">
-            <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-terracotta">
-              <Shirt size={14} />
-              {messages.desk.dress}
-            </p>
-            <p className="mt-3 text-sm text-ink-soft">{messages.desk.dress1}</p>
-            <p className="mt-4 text-[11px] uppercase tracking-[0.2em] text-terracotta">
-              {messages.desk.practical}
-            </p>
-            <ul className="mt-2 space-y-1 text-sm text-ink-soft">
-              <li>{messages.desk.emergency}</li>
-              <li>{messages.desk.sim}</li>
-              <li>{messages.desk.water}</li>
-              <li>{messages.desk.time}</li>
-              <li>{messages.desk.sag}</li>
-              <li>{messages.desk.plugD}</li>
-              <li>{messages.desk.moneyD}</li>
-            </ul>
-          </article>
-          <article className="rounded-[1.5rem] bg-cream p-5">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-terracotta">
-              {messages.desk.sights}
-            </p>
-            <ul className="mt-3 space-y-2 text-sm text-ink-soft">
-              <li>{messages.desk.sight1}</li>
-              <li>{messages.desk.sight2}</li>
-              <li>{messages.desk.sight3}</li>
-              <li>{messages.desk.sight4}</li>
-              <li>{messages.desk.sight5}</li>
-              <li>{messages.desk.sight6}</li>
-            </ul>
-          </article>
-        </div>
-      </section>
-
-      <section className="bg-sand text-ink">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 pb-6 md:grid-cols-[1.1fr_0.9fr] md:px-6">
-          <article className="rounded-[1.8rem] bg-cream p-6 md:p-8">
+      <section id="pack-walk" className="px-4 pb-8 md:px-6">
+        <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-[1.1fr_0.9fr]">
+          <article className="rounded-[1.8rem] bg-cream p-6 ring-1 ring-ink/8 md:p-8">
             <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
               {messages.desk.speak}
             </p>
@@ -270,8 +244,15 @@ export function TravelDesk({
             <p className="mt-4 font-display text-5xl" aria-live="polite">
               {phrase.say}
             </p>
-            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-ink-soft">{phrase.how}</p>
+            <p className="mt-2 text-sm uppercase tracking-[0.18em] text-ink-soft">
+              {phrase.how}
+            </p>
             <p className="mt-4 text-lg">{pick(phrase.mean, locale)}</p>
+            <p className="mt-4 text-sm text-ink-soft" aria-live="polite">
+              {parade[langIndex]?.[1]}
+              <span className="mx-2 text-terracotta">·</span>
+              {tip}
+            </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {chileanPhrases.map((item, index) => (
                 <button
@@ -290,7 +271,7 @@ export function TravelDesk({
               ))}
             </div>
           </article>
-          <article className="rounded-[1.8rem] bg-cream p-6 md:p-8">
+          <article className="rounded-[1.8rem] bg-cream p-6 ring-1 ring-ink/8 md:p-8">
             <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-terracotta">
               <Utensils size={14} />
               {messages.desk.foods}
@@ -307,7 +288,24 @@ export function TravelDesk({
         </div>
       </section>
 
-      <section className="bg-sand pb-8">
+      <section className="border-t border-ink/8 px-4 py-8 md:px-6">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
+            {messages.desk.sights}
+          </p>
+          <p className="mt-1 text-sm text-ink-soft">{messages.desk.more}</p>
+          <ul className="mt-4 grid gap-2 text-sm text-ink-soft sm:grid-cols-2 lg:grid-cols-3">
+            <li>{messages.desk.sight1}</li>
+            <li>{messages.desk.sight2}</li>
+            <li>{messages.desk.sight3}</li>
+            <li>{messages.desk.sight4}</li>
+            <li>{messages.desk.sight5}</li>
+            <li>{messages.desk.sight6}</li>
+          </ul>
+        </div>
+      </section>
+
+      <section className="pb-10">
         <div className="mx-auto max-w-6xl px-4 md:px-6">
           <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
             {messages.desk.spine}
@@ -322,9 +320,9 @@ export function TravelDesk({
                   type="button"
                   onClick={() => {
                     setActive(id);
-                    window.scrollTo({ top: 0, behavior: "smooth" });
+                    window.scrollTo({ top: 280, behavior: "smooth" });
                   }}
-                  className="min-w-[200px] overflow-hidden rounded-[1.3rem] bg-cream text-left"
+                  className="min-w-[200px] max-w-[220px] overflow-hidden rounded-[1.3rem] bg-white text-left ring-1 ring-black/10"
                 >
                   <div className="relative h-24">
                     <Image

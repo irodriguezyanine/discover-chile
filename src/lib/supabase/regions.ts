@@ -34,6 +34,8 @@ type PinRow = {
 
 const ZONE_IDS = new Set<string>(mapCycle);
 
+const staticById = new Map(mapZones.map((zone) => [zone.id, zone]));
+
 function asZoneId(id: string): MapZoneId | null {
   return ZONE_IDS.has(id) ? (id as MapZoneId) : null;
 }
@@ -44,6 +46,27 @@ function staticMapData(): LiveMapData {
     pins: mapPins.map((pin) => ({ ...pin })),
     cycle: [...mapCycle],
     source: "static",
+  };
+}
+
+/**
+ * Prefer organic SVG silhouettes from code (`mapZones.d`) over Supabase `path_d`,
+ * which may still hold the old blocky geometry. Live DB still supplies fills,
+ * island flags, and labels.
+ */
+function mergeZone(row: RegionRow): LiveMapZone | null {
+  const id = asZoneId(row.id);
+  if (!id || !row.fill) return null;
+  const fallback = staticById.get(id);
+  const d = fallback?.d ?? row.path_d;
+  if (!d) return null;
+  return {
+    id,
+    d,
+    fill: row.fill,
+    island: row.island == null ? Boolean(fallback?.island) : Boolean(row.island),
+    labelEn: row.label_en ?? undefined,
+    labelEs: row.label_es ?? undefined,
   };
 }
 
@@ -72,16 +95,8 @@ export async function getLiveMapData(): Promise<LiveMapData> {
 
     const zones: LiveMapZone[] = [];
     for (const row of regionsRes.data as RegionRow[]) {
-      const id = asZoneId(row.id);
-      if (!id || !row.path_d || !row.fill) continue;
-      zones.push({
-        id,
-        d: row.path_d,
-        fill: row.fill,
-        island: Boolean(row.island),
-        labelEn: row.label_en ?? undefined,
-        labelEs: row.label_es ?? undefined,
-      });
+      const zone = mergeZone(row);
+      if (zone) zones.push(zone);
     }
 
     if (zones.length < 4) return staticMapData();

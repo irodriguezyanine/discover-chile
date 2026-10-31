@@ -51,7 +51,7 @@ export const ja = {
   },
   planner: {
     title: "旅をつくる",
-    countryQ: "どこから飛びますか？",
+    countryQ: "どこの国の方ですか？",
     countryHint: "言語、ビザ、通貨、バスか飛行機かの勧め方が決まります。",
     search: "国を検索",
     popular: "よく来る国",

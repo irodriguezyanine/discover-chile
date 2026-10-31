@@ -51,7 +51,7 @@ export const zh = {
   },
   planner: {
     title: "搭建行程",
-    countryQ: "你从哪里飞来？",
+    countryQ: "你来自哪个国家？",
     countryHint: "这会设定语言、签证、货币，以及我们建议大巴还是飞机。",
     search: "搜索国家",
     popular: "常来的访客",

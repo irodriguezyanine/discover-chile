@@ -51,7 +51,7 @@ export const de = {
   },
   planner: {
     title: "Reise bauen",
-    countryQ: "Aus welchem Land reist du?",
+    countryQ: "Aus welchem Land kommst du?",
     countryHint: "Das setzt Sprache, Visum, Währung und Bus- versus Flugempfehlung.",
     search: "Land suchen",
     popular: "Häufige Gäste",

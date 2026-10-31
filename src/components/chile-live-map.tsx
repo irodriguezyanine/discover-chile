@@ -1,18 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Destination } from "@/data/types";
 import {
-  mapCycle as staticCycle,
-  mapPins as staticPins,
-  mapZones as staticZones,
-  type MapZoneId,
-} from "@/data/chile-map";
-import type { LiveMapData } from "@/data/chile-map";
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import type { Destination } from "@/data/types";
 import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/en";
 import { pick } from "@/i18n/loc";
 import { cn } from "@/lib/cn";
+import {
+  layoutSelectorRail,
+  selectorCycle,
+  selectorDeskViewBox,
+  selectorHitZones,
+  selectorImage,
+  selectorImageSize,
+  selectorLabels,
+  selectorPhoneViewBox,
+  selectorPins,
+  type SelectorZoneId,
+} from "@/data/chile-selector-map";
 
 export function ChileLiveMap({
   destinations,
@@ -20,35 +32,36 @@ export function ChileLiveMap({
   messages,
   active,
   onActive,
-  mapData,
-  tone = "light",
+  onPreview,
+  phone = false,
+  hideChips = false,
 }: {
   destinations: Destination[];
   locale: Locale;
   messages: Messages;
-  active: MapZoneId;
-  onActive: (id: MapZoneId) => void;
-  mapData?: LiveMapData;
-  tone?: "light" | "dark";
+  active: SelectorZoneId;
+  onActive: (id: SelectorZoneId) => void;
+  onPreview?: (id: SelectorZoneId | null) => void;
+  phone?: boolean;
+  hideChips?: boolean;
 }) {
-  const [paused, setPaused] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const light = tone === "light";
+  const [hover, setHover] = useState<SelectorZoneId | null>(null);
 
-  const zoneList = mapData?.zones?.length ? mapData.zones : staticZones;
-  const pinList = mapData?.pins?.length ? mapData.pins : staticPins;
-  const cycle = useMemo(
-    () => (mapData?.cycle?.length ? mapData.cycle : staticCycle),
-    [mapData?.cycle],
-  );
+  const setPreview = (id: SelectorZoneId | null) => {
+    if (phone) return;
+    setHover(id);
+    onPreview?.(id);
+  };
 
   const step = useCallback(
     (delta: number) => {
-      const index = cycle.indexOf(active);
-      const next = cycle[(index + delta + cycle.length) % cycle.length];
+      const index = selectorCycle.indexOf(active);
+      const next =
+        selectorCycle[(index + delta + selectorCycle.length) % selectorCycle.length];
       if (next) onActive(next);
     },
-    [active, cycle, onActive],
+    [active, onActive],
   );
 
   useEffect(() => {
@@ -59,217 +72,395 @@ export function ChileLiveMap({
     return () => media.removeEventListener("change", onChange);
   }, []);
 
-  useEffect(() => {
-    if (paused || reduceMotion) return;
-    const timer = window.setInterval(() => step(1), 4200);
-    return () => window.clearInterval(timer);
-  }, [paused, reduceMotion, step]);
-
-  const label = light ? "#3d5248" : "#fffaf2";
-  const ocean = light ? "#5a8f9c" : "#8ec9d6";
-  const pinFill = light ? "#102018" : "#fffaf2";
-  const strokeIdle = light ? "rgba(16,32,24,0.22)" : "rgba(255,250,242,0.28)";
-  const strokeActive = light ? "#102018" : "#fffaf2";
-
-  return (
-    <div
-      className="relative flex min-h-[min(72dvh,640px)] flex-col justify-center md:min-h-0"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node)) {
-          setPaused(false);
+  const mapSvg = (viewBox: string, compact: boolean) => (
+    <svg
+      viewBox={viewBox}
+      className={
+        compact
+          ? "block h-full w-auto max-w-full"
+          : "mx-auto block max-w-full"
+      }
+      style={
+        compact
+          ? undefined
+          : { height: "min(70vh, 640px)", width: "auto" }
+      }
+      role="group"
+      aria-label={messages.desk.mapAria}
+      tabIndex={0}
+      preserveAspectRatio="xMidYMid meet"
+      onKeyDown={(event) => {
+        if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+          event.preventDefault();
+          step(1);
+        }
+        if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+          event.preventDefault();
+          step(-1);
         }
       }}
     >
-      <div
-        className={cn(
-          "mx-auto w-full max-w-[360px] rounded-[2rem] p-3 md:max-w-[420px]",
-          light
-            ? "bg-gradient-to-b from-cream via-[#eef5f2] to-[#d9ebe6] shadow-[0_24px_60px_rgba(16,32,24,0.12)] ring-1 ring-ink/10"
-            : "",
-        )}
-      >
-        <svg
-          viewBox="0 0 320 760"
-          className="mx-auto h-auto w-full"
-          role="img"
-          aria-label={messages.desk.mapAria}
-          tabIndex={0}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowRight" || event.key === "ArrowDown") {
-              event.preventDefault();
-              step(1);
-            }
-            if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
-              event.preventDefault();
-              step(-1);
-            }
-          }}
-        >
-          <defs>
-            <linearGradient id="chile-sea" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={light ? "#cfe4e2" : "#0c2420"} stopOpacity="0.9" />
-              <stop offset="100%" stopColor={light ? "#e8f2ef" : "#081410"} stopOpacity="0.55" />
-            </linearGradient>
-          </defs>
-          <rect x="0" y="0" width="320" height="760" fill="url(#chile-sea)" rx="18" />
-
-          <text
-            x="208"
-            y="28"
-            fill={label}
-            fillOpacity="0.55"
-            fontSize="10"
-            letterSpacing="0.18em"
+      <image
+        href={selectorImage}
+        width={selectorImageSize.width}
+        height={selectorImageSize.height}
+        preserveAspectRatio="xMidYMid meet"
+        className="pointer-events-none"
+      />
+      {compact ? null : (
+        <line
+          x1="104"
+          y1="300"
+          x2="260"
+          y2="462"
+          stroke="#c45c26"
+          strokeDasharray="8 10"
+          strokeWidth="2"
+          strokeOpacity="0.55"
+          className="pointer-events-none"
+        />
+      )}
+      {selectorHitZones.map((zone) => {
+        if (compact && zone.id === "rapanui") return null;
+        const destination = destinations.find((item) => item.id === zone.id);
+        const selected = active === zone.id;
+        const hot = selected || hover === zone.id;
+        return (
+          <g key={zone.id}>
+            <path
+              d={zone.d}
+              fill="transparent"
+              stroke="transparent"
+              strokeWidth={zone.island || compact ? 28 : 22}
+              className="cursor-pointer"
+              data-zone={zone.id}
+              onClick={() => onActive(zone.id)}
+              onPointerEnter={() => setPreview(zone.id)}
+              onFocus={() => {
+                if (!compact) setPreview(zone.id);
+              }}
+              tabIndex={0}
+              role="button"
+              aria-pressed={selected}
+              aria-label={
+                destination ? pick(destination.name, locale) : selectorLabels[zone.id]
+              }
+            />
+            <path
+              d={zone.d}
+              fill={
+                selected
+                  ? "rgba(196,92,38,0.48)"
+                  : hot
+                    ? "rgba(196,92,38,0.22)"
+                    : "rgba(255,255,255,0.02)"
+              }
+              stroke={
+                selected
+                  ? "#c45c26"
+                  : hot
+                    ? "rgba(196,92,38,0.8)"
+                    : "transparent"
+              }
+              strokeWidth={selected ? 7 : hot ? 5 : 2.5}
+              className="pointer-events-none"
+            />
+          </g>
+        );
+      })}
+      {selectorPins.map((pin) => {
+        const on = active === pin.zone || hover === pin.zone;
+        if (compact && pin.zone === "rapanui") return null;
+        return (
+          <g
+            key={pin.id}
+            data-pin={pin.id}
+            className="cursor-pointer"
+            onClick={() => onActive(pin.zone)}
+            onPointerEnter={() => setPreview(pin.zone)}
+            role="button"
+            tabIndex={0}
+            aria-label={pin.label}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onActive(pin.zone);
+              }
+            }}
           >
-            PERÚ
-          </text>
-          <text
-            x="246"
-            y="108"
-            fill={label}
-            fillOpacity="0.5"
-            fontSize="10"
-            letterSpacing="0.12em"
-          >
-            BOLIVIA
-          </text>
-          <text
-            x="268"
-            y="300"
-            fill={ocean}
-            fillOpacity="0.55"
-            fontSize="11"
-            letterSpacing="0.28em"
-            transform="rotate(90 268 300)"
-          >
-            ARGENTINA
-          </text>
-          <text
-            x="16"
-            y="360"
-            fill={ocean}
-            fillOpacity="0.55"
-            fontSize="10"
-            letterSpacing="0.32em"
-          >
-            PACÍFICO
-          </text>
-
-          <line
-            x1="84"
-            y1="214"
-            x2="186"
-            y2="206"
-            stroke={ocean}
-            strokeDasharray="5 6"
-            strokeOpacity="0.45"
-          />
-
-          {zoneList.map((zone) => {
-            const destination = destinations.find((item) => item.id === zone.id);
-            const selected = active === zone.id;
-            return (
-              <path
-                key={zone.id}
-                d={zone.d}
-                fill={zone.fill}
-                fillOpacity={selected ? 1 : light ? 0.88 : 0.76}
-                stroke={selected ? strokeActive : strokeIdle}
-                strokeWidth={selected ? 2.4 : 1.1}
-                strokeLinejoin="round"
-                className="cursor-pointer transition-[fill-opacity,stroke-width] duration-300"
-                onClick={() => onActive(zone.id)}
-                onFocus={() => onActive(zone.id)}
-                tabIndex={0}
-                role="button"
-                aria-pressed={selected}
-                aria-label={destination ? pick(destination.name, locale) : zone.id}
-              />
-            );
-          })}
-
-          {pinList.map((pin) => {
-            const on = active === pin.zone;
-            if (!on && pin.featured !== true) return null;
-            return (
-              <g key={pin.id} className="pointer-events-none">
-                {on ? (
-                  <circle cx={pin.x} cy={pin.y} r="9" fill={pinFill} fillOpacity="0.12">
-                    {reduceMotion ? null : (
-                      <animate
-                        attributeName="r"
-                        values="4;11;4"
-                        dur="2.4s"
-                        repeatCount="indefinite"
-                      />
-                    )}
-                  </circle>
-                ) : null}
-                <circle
-                  cx={pin.x}
-                  cy={pin.y}
-                  r={on ? 3.6 : 2.3}
-                  fill={on ? "#c45c26" : pinFill}
+            <circle
+              cx={pin.x}
+              cy={pin.y}
+              r={compact ? 36 : 34}
+              fill="transparent"
+            />
+            {on && !reduceMotion ? (
+              <circle
+                cx={pin.x}
+                cy={pin.y}
+                r="16"
+                fill="#c45c26"
+                fillOpacity="0.18"
+              >
+                <animate
+                  attributeName="r"
+                  values="8;22;8"
+                  dur="2.4s"
+                  repeatCount="indefinite"
                 />
-                <text
-                  x={pin.x + 7}
-                  y={pin.y + 3}
-                  fill={pinFill}
-                  fontSize="9"
-                  opacity={on ? 1 : 0.62}
-                >
-                  {pin.label}
-                </text>
-              </g>
-            );
-          })}
+              </circle>
+            ) : null}
+            <circle
+              cx={pin.x}
+              cy={pin.y}
+              r={on ? 7 : 4.5}
+              fill={on ? "#c45c26" : "#1c2420"}
+            />
+            {compact ? null : (
+              <text
+                x={pin.x + (pin.x < 240 ? -14 : 14)}
+                y={pin.y + 5}
+                textAnchor={pin.x < 240 ? "end" : "start"}
+                fill="#1c2420"
+                fontSize={18}
+                fontWeight={on ? 700 : 400}
+                opacity={on ? 1 : 0.78}
+                className="pointer-events-none"
+              >
+                {pin.label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+      {compact ? null : (
+        <text
+          x="24"
+          y="230"
+          fill="#1c2420"
+          fontSize="16"
+          letterSpacing="0.12em"
+          opacity="0.75"
+          className="pointer-events-none"
+        >
+          ISLA DE PASCUA
+        </text>
+      )}
+    </svg>
+  );
 
-          <text
-            x="34"
-            y="186"
-            fill={label}
-            fontSize="9"
-            letterSpacing="0.16em"
-            opacity="0.7"
-          >
-            ISLA DE PASCUA
-          </text>
-        </svg>
-      </div>
-      <p
-        className={cn(
-          "mt-3 text-center text-[11px] uppercase tracking-[0.22em]",
-          light ? "text-ink-soft" : "text-cream/50",
-        )}
+  if (phone) {
+    return (
+      <PhoneMapSelector
+        messages={messages}
+        active={active}
+        onActive={onActive}
+        mapSvg={mapSvg(selectorPhoneViewBox, true)}
+      />
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div
+        className="relative"
+        onPointerLeave={() => setPreview(null)}
       >
-        {paused ? messages.desk.pause : messages.desk.cycle} · 4.300 km
-      </p>
-      <div className="mt-4 hidden flex-wrap justify-center gap-1.5 md:flex">
-        {cycle.map((id) => {
-          const destination = destinations.find((item) => item.id === id);
-          if (!destination) return null;
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onActive(id)}
-              className={cn(
-                "rounded-full px-2.5 py-1 text-[11px] uppercase tracking-wider",
-                active === id
-                  ? "bg-terracotta text-cream"
-                  : light
-                    ? "bg-cream text-ink-soft ring-1 ring-ink/10 hover:bg-sand-deep"
-                    : "bg-white/10 text-cream/75 hover:bg-white/16",
-              )}
-            >
-              {pick(destination.region, locale)}
-            </button>
-          );
-        })}
+        {mapSvg(selectorDeskViewBox, false)}
       </div>
+      <p className="mt-3 text-center text-[11px] uppercase tracking-[0.22em] text-ink-soft">
+        {messages.desk.cycle} · 4.300 km
+      </p>
+      {hideChips ? null : (
+        <ZoneChips
+          destinations={destinations}
+          locale={locale}
+          active={active}
+          onActive={onActive}
+        />
+      )}
+    </div>
+  );
+}
+
+function PhoneMapSelector({
+  messages,
+  active,
+  onActive,
+  mapSvg,
+}: {
+  messages: Messages;
+  active: SelectorZoneId;
+  onActive: (id: SelectorZoneId) => void;
+  mapSvg: ReactNode;
+}) {
+  const railRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const node = railRef.current;
+    if (!node) return;
+    const measure = () => {
+      const next = node.getBoundingClientRect().height;
+      if (next > 0) setHeight(next);
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  const rows = height > 40 ? layoutSelectorRail(height) : [];
+
+  return (
+    <div className="flex h-full min-h-0 flex-col px-2 pb-1 pt-1">
+      <div className="flex min-h-0 flex-1">
+        <div className="relative flex w-[38%] max-w-[9.5rem] shrink-0 flex-col items-center">
+          <span className="text-[9px] font-semibold tracking-[0.22em] text-ink-soft">
+            {messages.desk.phoneNorth}
+          </span>
+          <div ref={railRef} className="relative min-h-0 w-full flex-1">
+            <div className="absolute inset-0 flex items-center justify-center">
+              {mapSvg}
+            </div>
+          </div>
+          <span className="text-[9px] font-semibold tracking-[0.22em] text-ink-soft">
+            {messages.desk.phoneSouth}
+          </span>
+        </div>
+
+        <div className="flex min-h-0 flex-1 flex-col">
+          <span className="invisible text-[9px] font-semibold tracking-[0.22em]">
+            {messages.desk.phoneNorth}
+          </span>
+          <div className="relative min-h-0 flex-1">
+            {rows.map((row) => {
+              const selected = active === row.id;
+              return (
+                <button
+                  key={row.id}
+                  type="button"
+                  onClick={() => onActive(row.id)}
+                  aria-pressed={selected}
+                  aria-label={selectorLabels[row.id]}
+                  className={cn(
+                    "absolute right-1 left-0 flex h-8 -translate-y-1/2 items-center gap-2 pr-1 text-left",
+                    selected ? "text-terracotta" : "text-ink",
+                  )}
+                  style={{ top: row.y }}
+                >
+                  <span
+                    className={cn(
+                      "h-px min-w-3 flex-1",
+                      selected ? "bg-terracotta" : "bg-ink/15",
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "shrink-0 text-[12.5px] leading-none tracking-wide",
+                      selected
+                        ? "font-display text-[15px] font-medium"
+                        : "font-medium",
+                    )}
+                  >
+                    {selectorLabels[row.id]}
+                  </span>
+                  <span
+                    className={cn(
+                      "size-1.5 shrink-0 rounded-full",
+                      selected ? "bg-terracotta" : "bg-ink/25",
+                    )}
+                  />
+                </button>
+              );
+            })}
+          </div>
+          <span className="invisible text-[9px] font-semibold tracking-[0.22em]">
+            {messages.desk.phoneSouth}
+          </span>
+        </div>
+      </div>
+
+      <div className="mt-1 flex shrink-0 items-center justify-between gap-2 px-1 pb-1">
+        <button
+          type="button"
+          onClick={() => onActive("rapanui")}
+          aria-pressed={active === "rapanui"}
+          className={cn(
+            "inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-[11px] uppercase tracking-[0.14em] ring-1 transition",
+            active === "rapanui"
+              ? "bg-terracotta text-cream ring-terracotta"
+              : "bg-white text-ink ring-black/10",
+          )}
+        >
+          <span className="size-1.5 rounded-full bg-current opacity-70" />
+          {selectorLabels.rapanui}
+          <span className="text-[9px] tracking-wider opacity-60">
+            {messages.desk.phoneIsland}
+          </span>
+        </button>
+        <p className="text-[10px] uppercase tracking-[0.16em] text-ink-soft">
+          4.300 KM
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ZoneChips({
+  destinations,
+  locale,
+  active,
+  onActive,
+  phone = false,
+}: {
+  destinations: Destination[];
+  locale: Locale;
+  active: SelectorZoneId;
+  onActive: (id: SelectorZoneId) => void;
+  phone?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!phone || !active) return;
+    const node = ref.current?.querySelector(`[data-zone-chip="${active}"]`);
+    node?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [active, phone]);
+
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        "no-scrollbar flex snap-x snap-mandatory flex-nowrap gap-2 overflow-x-auto",
+        phone
+          ? "shrink-0 px-4 py-2"
+          : "mt-3 -mx-4 justify-start px-4 pb-1 md:mx-0 md:flex-wrap md:justify-center md:px-0",
+      )}
+    >
+      {selectorCycle.map((id) => {
+        const destination = destinations.find((item) => item.id === id);
+        const label = destination
+          ? pick(destination.name, locale)
+          : selectorLabels[id];
+        return (
+          <button
+            key={id}
+            type="button"
+            data-zone-chip={id}
+            onClick={() => onActive(id)}
+            className={cn(
+              "snap-center rounded-full px-3.5 py-2 text-xs uppercase tracking-wider transition",
+              phone ? "min-h-11 shrink-0" : "",
+              active === id
+                ? "bg-terracotta text-cream"
+                : "bg-white text-ink-soft ring-1 ring-black/10 hover:bg-sand-deep",
+            )}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

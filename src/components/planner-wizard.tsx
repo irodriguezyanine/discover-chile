@@ -24,7 +24,6 @@ import {
   popularCountryCodes,
 } from "@/data/countries";
 import { destinations } from "@/data/destinations";
-import { fuelBrands, fuelByRegion } from "@/data/fuel";
 import type { TravelStyle } from "@/data/types";
 import {
   emptyEstimate,
@@ -94,12 +93,6 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     () => (plan.regions.length ? estimateTrip({ ...plan, eco }) : emptyEstimate()),
     [plan, eco],
   );
-  const relatedFuel = useMemo(
-    () => plan.regions.flatMap((id) => fuelByRegion(id)),
-    [plan.regions],
-  );
-  const showFuel = plan.style === "camper";
-
   const localTotal = convertFromUsd(estimate.totalUsd, currency, rates);
   const partyBudgetUsd = plan.budgetUsd * Math.max(1, plan.travelers);
   const budgetLocal = convertFromUsd(partyBudgetUsd, currency, rates);
@@ -147,7 +140,10 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     interests: messages.planner.interestsQ,
     regions: messages.planner.regionsQ,
     move: messages.planner.moveQ,
-    route: messages.planner.bestRoute,
+    route:
+      plan.style === "camper"
+        ? messages.planner.bestRoute
+        : messages.planner.planSummaryQ,
   };
   const steps = stepIds.map((id) => titles[id]);
   const safeStep = Math.min(Math.max(step, 0), Math.max(steps.length - 1, 0));
@@ -596,50 +592,24 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                     </p>
                   ) : null}
                   {plan.style === "camper" ? (
-                    <>
-                      <SuggestedSpine
-                        messages={messages}
-                        locale={locale}
-                        regionIds={plan.regions}
-                        days={plan.days}
-                        onChangeRegions={(regions) => updatePlan({ regions })}
-                        onChangeDays={(days) => updatePlan({ days })}
-                      />
-                      {showFuel ? (
-                        <div className="rounded-[1.4rem] bg-sand p-5">
-                          <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
-                            {messages.planner.apps}
-                          </p>
-                          <p className="mt-2 text-sm text-ink-soft">{messages.planner.fuelNote}</p>
-                          <ul className="mt-3 space-y-2 text-sm">
-                            {fuelBrands.map((brand) => (
-                              <li key={brand.id} className="flex flex-wrap items-baseline justify-between gap-2">
-                                <span>
-                                  <strong>{brand.name}</strong> · {brand.appName}
-                                </span>
-                                <a
-                                  href={brand.app}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-terracotta hover:underline"
-                                >
-                                  {messages.common.openApp}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                          {relatedFuel.length ? (
-                            <p className="mt-4 text-xs uppercase tracking-wider text-ink-soft">
-                              {messages.planner.fuelStops} · {relatedFuel.length}
-                            </p>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </>
+                    <SuggestedSpine
+                      messages={messages}
+                      locale={locale}
+                      regionIds={plan.regions}
+                      days={plan.days}
+                      stopHighlights={plan.stopHighlights}
+                      onChangeRegions={(regions) => updatePlan({ regions })}
+                      onChangeDays={(nextDays) => updatePlan({ days: nextDays })}
+                      onChangeHighlights={(stopHighlights) =>
+                        updatePlan({ stopHighlights })
+                      }
+                    />
                   ) : (
                     <ol className="space-y-3">
                       {estimate.allocation.map((item, index) => {
-                        const destination = destinations.find((entry) => entry.id === item.id);
+                        const destination = destinations.find(
+                          (entry) => entry.id === item.id,
+                        );
                         if (!destination) return null;
                         return (
                           <li
@@ -650,7 +620,8 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                               {index + 1}. {pick(destination.name, locale)}
                             </p>
                             <p className="text-sm text-ink-soft">
-                              {item.days} {messages.common.days} · {pick(destination.why, locale)}
+                              {item.days} {messages.common.days} ·{" "}
+                              {pick(destination.why, locale)}
                             </p>
                           </li>
                         );

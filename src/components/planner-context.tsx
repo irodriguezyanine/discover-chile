@@ -27,6 +27,7 @@ export const initialPlan: PlannerInput = {
   style: "mid",
   interests: [],
   regions: [],
+  stopHighlights: {},
   eco: false,
 };
 

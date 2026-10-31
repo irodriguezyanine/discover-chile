@@ -10,6 +10,8 @@ export type PlannerInput = {
   style: TravelStyle;
   interests: string[];
   regions: string[];
+  /** Selected panorama/highlight indexes per destination id (camper spine editor). */
+  stopHighlights: Record<string, number[]>;
   eco: boolean;
 };
 

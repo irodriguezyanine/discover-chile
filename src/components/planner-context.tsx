@@ -69,12 +69,23 @@ function isHomePath(pathname: string) {
   return pathname.split("/").filter(Boolean).length === 1;
 }
 
+let cachedGuestRaw: string | null = null;
+let cachedGuest: GuestProfile | null = null;
+
 function readGuest(): GuestProfile | null {
   try {
     const raw = window.localStorage.getItem(GUEST_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as GuestProfile;
+    if (raw === cachedGuestRaw) return cachedGuest;
+    cachedGuestRaw = raw;
+    if (!raw) {
+      cachedGuest = null;
+      return null;
+    }
+    cachedGuest = JSON.parse(raw) as GuestProfile;
+    return cachedGuest;
   } catch {
+    cachedGuestRaw = null;
+    cachedGuest = null;
     return null;
   }
 }

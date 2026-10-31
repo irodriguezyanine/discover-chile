@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/en";
 import { ChileFlag } from "@/components/chile-flag";
-import { WelcomeIdentityFields } from "@/components/welcome-identity-fields";
+import {
+  type WelcomeStepId,
+  WelcomeCountryStep,
+  WelcomeCurrencyStep,
+  WelcomeCursorStep,
+  WelcomeLanguageStep,
+  WelcomeNameStep,
+} from "@/components/welcome-identity-fields";
 import { persistCursor } from "@/data/cursors";
 import { usePlanner, type GuestProfile } from "@/components/planner-context";
 
@@ -14,7 +21,24 @@ type Draft = {
   name?: string;
   country?: string;
   cursor?: string;
+  step?: WelcomeStepId;
+  currencyTouched?: boolean;
 };
+
+const MOBILE_STEPS: WelcomeStepId[] = [
+  "language",
+  "name",
+  "country",
+  "currency",
+];
+
+const DESKTOP_STEPS: WelcomeStepId[] = [
+  "language",
+  "cursor",
+  "name",
+  "country",
+  "currency",
+];
 
 function readDraft(): Draft | null {
   try {
@@ -25,13 +49,23 @@ function readDraft(): Draft | null {
   }
 }
 
-function initialIdentity(guest: GuestProfile | null) {
+function writeDraft(draft: Draft) {
+  sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+}
+
+function initialIdentity(guest: GuestProfile | null, steps: WelcomeStepId[]) {
   const draft = readDraft();
-  if (draft?.name) {
+  const fallbackStep = steps[0] ?? "language";
+  const step =
+    draft?.step && steps.includes(draft.step) ? draft.step : fallbackStep;
+
+  if (draft?.name || draft?.country || draft?.cursor || draft?.step) {
     return {
-      name: draft.name,
+      name: draft.name || "",
       country: draft.country || "US",
       cursor: draft.cursor || "moai",
+      step,
+      currencyTouched: Boolean(draft.currencyTouched),
     };
   }
   if (guest?.name) {
@@ -39,15 +73,35 @@ function initialIdentity(guest: GuestProfile | null) {
       name: guest.name,
       country: guest.country || "US",
       cursor: guest.cursor || "moai",
+      step: fallbackStep,
+      currencyTouched: false,
     };
   }
-  return { name: "", country: "US", cursor: "moai" };
+  return {
+    name: "",
+    country: "US",
+    cursor: "moai",
+    step: fallbackStep,
+    currencyTouched: false,
+  };
 }
 
 function useHasMounted() {
   return useSyncExternalStore(
     () => () => undefined,
     () => true,
+    () => false,
+  );
+}
+
+function useIsDesktop() {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const media = window.matchMedia("(min-width: 768px)");
+      media.addEventListener("change", onStoreChange);
+      return () => media.removeEventListener("change", onStoreChange);
+    },
+    () => window.matchMedia("(min-width: 768px)").matches,
     () => false,
   );
 }
@@ -64,21 +118,77 @@ function DeskWelcomeForm({
   const { completeOnboarding, skipGate, openPlanner } = usePlanner();
   const desk = messages.desk;
   const alreadyOnboarded = Boolean(guest?.onboarded);
-  const boot = initialIdentity(guest);
+  const isDesktop = useIsDesktop();
+  const steps = isDesktop ? DESKTOP_STEPS : MOBILE_STEPS;
+  const boot = initialIdentity(guest, steps);
+
   const [name, setName] = useState(boot.name);
   const [country, setCountry] = useState(boot.country);
   const [cursor, setCursor] = useState(boot.cursor);
-  const ready = name.trim().length >= 2 && Boolean(country);
+  const [currencyTouched, setCurrencyTouched] = useState(boot.currencyTouched);
+  const [step, setStep] = useState<WelcomeStepId>(boot.step);
+
+  // If viewport flips and current step is invalid (cursor on mobile), remap.
+  useEffect(() => {
+    if (!steps.includes(step)) {
+      setStep(steps[0] ?? "language");
+    }
+  }, [steps, step]);
+
+  const activeStep = steps.includes(step) ? step : (steps[0] ?? "language");
+  const stepIndex = Math.max(0, steps.indexOf(activeStep));
+  const isFirst = stepIndex <= 0;
+  const isLast = stepIndex >= steps.length - 1;
+  const nameReady = name.trim().length >= 2;
+  const nameStepIndex = steps.indexOf("name");
+  const pastName = nameReady && nameStepIndex >= 0 && stepIndex > nameStepIndex;
+  const greeting = pastName
+    ? `${desk.holaPo}, ${name.trim()}`
+    : desk.holaPo;
+
+  const persist = (next?: Partial<Draft>) => {
+    writeDraft({
+      name,
+      country,
+      cursor,
+      step: activeStep,
+      currencyTouched,
+      ...next,
+    });
+  };
+
+  const canContinue = useMemo(() => {
+    if (activeStep === "name") return nameReady;
+    if (activeStep === "country") return Boolean(country);
+    if (activeStep === "cursor") return Boolean(cursor);
+    return true;
+  }, [activeStep, country, cursor, nameReady]);
+
+  const goNext = () => {
+    if (!canContinue || isLast) return;
+    const nextStep = steps[stepIndex + 1];
+    if (!nextStep) return;
+    setStep(nextStep);
+    persist({ step: nextStep, name, country, cursor, currencyTouched });
+  };
+
+  const goBack = () => {
+    if (isFirst) return;
+    const prevStep = steps[stepIndex - 1];
+    if (!prevStep) return;
+    setStep(prevStep);
+    persist({ step: prevStep, name, country, cursor, currencyTouched });
+  };
 
   const finish = (next: "home" | "plan") => {
-    if (!ready) return;
-    persistCursor(cursor);
+    if (!nameReady || !country) return;
+    persistCursor(isDesktop ? cursor : "moai");
     sessionStorage.removeItem(DRAFT_KEY);
     completeOnboarding(
       {
         name: name.trim(),
         country,
-        cursor,
+        cursor: isDesktop ? cursor : "moai",
         party: guest?.party ?? "couple",
         travelers: guest?.travelers ?? 2,
         motive: guest?.motive ?? "vacaciones",
@@ -93,12 +203,12 @@ function DeskWelcomeForm({
 
   return (
     <div
-      className="welcome-screen fixed inset-0 z-[100] overflow-y-auto overscroll-contain bg-sand px-5 py-10 md:px-6"
+      className="welcome-screen fixed inset-0 z-[100] flex flex-col overflow-x-hidden bg-sand px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] md:overflow-y-auto md:px-6 md:py-10"
       role="dialog"
       aria-modal="true"
       aria-labelledby="desk-welcome-title"
     >
-      <div className="mx-auto w-full max-w-[34rem] pb-8">
+      <div className="mx-auto flex w-full max-w-[34rem] flex-1 flex-col pb-4 md:pb-8">
         {alreadyOnboarded ? (
           <button
             type="button"
@@ -107,62 +217,135 @@ function DeskWelcomeForm({
               skipGate();
               openPlanner();
             }}
-            className="mb-6 h-11 rounded-full bg-white px-4 text-sm ring-1 ring-black/10"
+            className="mb-4 h-11 self-start rounded-full bg-white px-4 text-sm ring-1 ring-black/10 md:mb-6"
           >
             {messages.planner.back}
           </button>
-        ) : null}
+        ) : !isFirst ? (
+          <button
+            type="button"
+            onClick={goBack}
+            className="mb-4 h-11 self-start rounded-full bg-white px-4 text-sm ring-1 ring-black/10 md:mb-6"
+          >
+            {messages.planner.back}
+          </button>
+        ) : (
+          <div className="mb-4 h-11 md:mb-6" aria-hidden />
+        )}
 
         <ChileFlag
           variant="circle"
-          className="welcome-flag mx-auto size-24"
+          className="welcome-flag mx-auto size-20 md:size-24"
         />
+
         <h1
           id="desk-welcome-title"
-          className="mt-6 text-center font-display text-4xl leading-tight"
+          className="mt-5 text-center font-display text-3xl leading-tight md:text-4xl"
         >
-          {desk.phoneWelcome}
+          {greeting}
         </h1>
-        <p className="mt-3 text-center text-sm text-ink-soft">
-          {desk.phoneWelcomeLead}
-        </p>
 
-        <div className="mt-8">
-          <WelcomeIdentityFields
-            locale={locale}
-            messages={messages}
-            name={name}
-            onName={setName}
-            country={country}
-            onCountry={setCountry}
-            cursor={cursor}
-            onCursor={setCursor}
-            onBeforeLocale={() => {
-              sessionStorage.setItem(
-                DRAFT_KEY,
-                JSON.stringify({ name, country, cursor }),
-              );
-            }}
-          />
+        {activeStep === "language" ? (
+          <p className="mt-3 text-center text-sm text-ink-soft">
+            {desk.phoneWelcomeLead}
+          </p>
+        ) : null}
+
+        <div className="mt-8 flex-1">
+          {activeStep === "language" ? (
+            <WelcomeLanguageStep
+              locale={locale}
+              title={desk.phoneLangQ}
+              onBeforePick={() =>
+                persist({
+                  name,
+                  country,
+                  cursor,
+                  step: "language",
+                  currencyTouched,
+                })
+              }
+            />
+          ) : null}
+
+          {activeStep === "cursor" ? (
+            <WelcomeCursorStep
+              title={desk.deskCursorQ}
+              cursor={cursor}
+              onCursor={(value) => {
+                setCursor(value);
+                persist({ cursor: value, step: "cursor" });
+              }}
+            />
+          ) : null}
+
+          {activeStep === "name" ? (
+            <WelcomeNameStep
+              title={desk.phoneNameQ}
+              name={name}
+              onName={(value) => {
+                setName(value);
+                persist({ name: value, step: "name" });
+              }}
+              placeholder={desk.phoneNamePh}
+            />
+          ) : null}
+
+          {activeStep === "country" ? (
+            <WelcomeCountryStep
+              locale={locale}
+              messages={messages}
+              country={country}
+              currencyTouched={currencyTouched}
+              onCountry={(value) => {
+                setCountry(value);
+                persist({ country: value, step: "country" });
+              }}
+            />
+          ) : null}
+
+          {activeStep === "currency" ? (
+            <WelcomeCurrencyStep
+              title={desk.phoneCurrencyQ}
+              onUserPick={() => {
+                setCurrencyTouched(true);
+                persist({ currencyTouched: true, step: "currency" });
+              }}
+            />
+          ) : null}
         </div>
 
-        <div className="mt-8 grid grid-cols-2 gap-3">
-          <button
-            type="button"
-            disabled={!ready}
-            onClick={() => finish("home")}
-            className="h-12 rounded-full bg-white text-sm font-medium ring-1 ring-black/10 disabled:opacity-40"
-          >
-            {desk.deskGoHome}
-          </button>
-          <button
-            type="button"
-            disabled={!ready}
-            onClick={() => finish("plan")}
-            className="h-12 rounded-full bg-terracotta text-sm font-medium text-cream disabled:opacity-40"
-          >
-            {desk.deskPlanTrip}
-          </button>
+        <div className="mt-8">
+          {isLast ? (
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={!canContinue}
+                onClick={() => finish("home")}
+                className="h-12 rounded-full bg-white text-sm font-medium ring-1 ring-black/10 disabled:opacity-40"
+              >
+                {desk.deskGoHome}
+              </button>
+              <button
+                type="button"
+                disabled={!canContinue}
+                onClick={() => finish("plan")}
+                className="h-12 rounded-full bg-terracotta text-sm font-medium text-cream disabled:opacity-40"
+              >
+                {desk.deskPlanTrip}
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              data-welcome-next
+              disabled={!canContinue}
+              onClick={goNext}
+              className="h-12 w-full rounded-full bg-terracotta text-sm font-medium text-cream disabled:opacity-40"
+            >
+              {desk.phoneContinue}
+            </button>
+          )}
         </div>
       </div>
     </div>

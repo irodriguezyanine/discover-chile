@@ -55,7 +55,7 @@ const deskEn = {
   more: "The rest of the desk",
   phoneWelcome: "Welcome to Chile, the best country in Chile.",
   phoneWelcomeLead: "A desk for the trip. Not a brochure.",
-  deskCursorQ: "Your cursor",
+  deskCursorQ: "Choose your cursor",
   deskPlanTrip: "Plan the trip",
   deskGoHome: "Go to the home",
   phoneLangQ: "Language",
@@ -64,6 +64,7 @@ const deskEn = {
   holaPo: "Hola po",
   phoneNameQ: "What's your name?",
   phoneNamePh: "Your name",
+  phoneContinue: "Continue",
 };
 
 const goEn = {
@@ -188,7 +189,7 @@ const deskEs: typeof deskEn = {
   more: "El resto del escritorio",
   phoneWelcome: "Bienvenido a Chile, el mejor país de Chile",
   phoneWelcomeLead: "Un escritorio para el viaje. No un folleto.",
-  deskCursorQ: "Tu cursor",
+  deskCursorQ: "Elige tu cursor",
   deskPlanTrip: "Planificar el viaje",
   deskGoHome: "Ir al home",
   phoneLangQ: "Idioma",
@@ -197,6 +198,7 @@ const deskEs: typeof deskEn = {
   holaPo: "Hola po",
   phoneNameQ: "¿Cómo te llamas?",
   phoneNamePh: "Tu nombre",
+  phoneContinue: "Seguir",
 };
 
 const goEs: typeof goEn = {

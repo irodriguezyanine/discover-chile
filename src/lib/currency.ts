@@ -96,6 +96,30 @@ export function convertFromUsd(
   return amountUsd * rate;
 }
 
+export function convertToUsd(
+  amountLocal: number,
+  currency: string,
+  rates: Record<string, number>,
+) {
+  const rate = rates[currency] ?? fallbackRates[currency] ?? 1;
+  if (!rate) return amountLocal;
+  return amountLocal / rate;
+}
+
+export function currencySymbol(currency: string, locale: string) {
+  try {
+    const parts = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      currencyDisplay: "narrowSymbol",
+      maximumFractionDigits: 0,
+    }).formatToParts(0);
+    return parts.find((part) => part.type === "currency")?.value ?? currency;
+  } catch {
+    return currency;
+  }
+}
+
 export function formatMoney(amount: number, currency: string, locale: string) {
   try {
     return new Intl.NumberFormat(locale, {

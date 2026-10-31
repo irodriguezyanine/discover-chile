@@ -6,6 +6,7 @@ export type PlannerInput = {
   travelers: number;
   days: number;
   budgetUsd: number;
+  budgetFlexible: boolean;
   style: TravelStyle;
   interests: string[];
   regions: string[];

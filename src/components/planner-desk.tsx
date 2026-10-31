@@ -151,6 +151,7 @@ function seedFromParams(
   const days = readNumber(params.get("d"));
   const travelers = readNumber(params.get("t"));
   const budgetUsd = readNumber(params.get("b"));
+  const budgetFlexibleParam = params.get("bf");
   const style = (params.get("s") as TravelStyle | null) || undefined;
   const regions = params.get("r")?.split(",").filter(Boolean);
   const interests = params.get("i")?.split(",").filter(Boolean);
@@ -162,6 +163,7 @@ function seedFromParams(
     days == null &&
     travelers == null &&
     budgetUsd == null &&
+    budgetFlexibleParam == null &&
     !style &&
     !regions &&
     !interests &&
@@ -174,6 +176,8 @@ function seedFromParams(
   if (days != null) seed.days = days;
   if (travelers != null) seed.travelers = travelers;
   if (budgetUsd != null) seed.budgetUsd = budgetUsd;
+  if (budgetFlexibleParam === "1") seed.budgetFlexible = true;
+  if (budgetFlexibleParam === "0") seed.budgetFlexible = false;
   if (style) seed.style = style;
   if (regions?.length) seed.regions = regions;
   if (interests?.length) seed.interests = interests;

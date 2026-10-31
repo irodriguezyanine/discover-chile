@@ -33,7 +33,6 @@ import { sampleRoutes } from "@/data/routes";
 import Link from "next/link";
 import type { Interest, TravelStyle } from "@/data/types";
 import {
-  defaultBudget,
   emptyEstimate,
   estimateTrip,
 } from "@/lib/estimate";
@@ -44,6 +43,10 @@ import { QuotePanel } from "@/components/quote-panel";
 import { CountryFlag } from "@/components/country-flag";
 import { ChileFlag } from "@/components/chile-flag";
 import { TravelOptions } from "@/components/travel-options";
+import {
+  BudgetAmountField,
+  BudgetFlexSwitch,
+} from "@/components/budget-amount-field";
 import { usePlanner } from "@/components/planner-context";
 import { cn } from "@/lib/cn";
 import { planStepIds, type PlanStepId } from "@/lib/plan-steps";
@@ -130,6 +133,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     url.searchParams.set("d", String(plan.days));
     url.searchParams.set("t", String(plan.travelers));
     url.searchParams.set("b", String(plan.budgetUsd));
+    url.searchParams.set("bf", plan.budgetFlexible ? "1" : "0");
     url.searchParams.set("s", plan.style);
     url.searchParams.set("r", plan.regions.join(","));
     url.searchParams.set("i", plan.interests.join(","));
@@ -144,6 +148,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
     country: messages.planner.countryQ,
     party: messages.planner.partyQ,
     budget: messages.planner.budgetQ,
+    style: messages.planner.styleQ,
     interests: messages.planner.interestsQ,
     regions: messages.planner.regionsQ,
     route: messages.planner.bestRoute,
@@ -364,31 +369,34 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
           ) : null}
 
           {activeId === "budget" ? (
-            <div className="mt-7">
-              <p className="text-sm text-ink-soft">{messages.planner.budgetHint}</p>
-              <p className="mt-5 font-display text-5xl tracking-tight">
-                {formatMoney(
-                  convertFromUsd(plan.budgetUsd, currency, rates),
-                  currency,
-                  locale,
-                )}
+            <div className="mt-7 max-w-xl">
+              <p className="text-sm leading-relaxed text-ink-soft">
+                {messages.planner.budgetHint}
               </p>
-              <p className="mt-1 text-sm text-ink-soft">
-                {formatMoney(plan.budgetUsd, "USD", "en")} {messages.planner.inUsd}
-              </p>
-              <input
-                type="range"
-                min={800}
-                max={20000}
-                step={100}
-                value={plan.budgetUsd}
-                onChange={(event) => updatePlan({ budgetUsd: Number(event.target.value) })}
-                className="planner-range mt-5 w-full"
+              <BudgetFlexSwitch
+                flexible={plan.budgetFlexible}
+                flexibleLabel={messages.planner.budgetFlexible}
+                fixedLabel={messages.planner.budgetFixed}
+                onChange={(budgetFlexible) => updatePlan({ budgetFlexible })}
               />
-              <p className="mt-8 text-[11px] uppercase tracking-[0.22em] text-ink-soft">
-                {messages.planner.styleQ}
+              <BudgetAmountField
+                budgetUsd={plan.budgetUsd}
+                currency={currency}
+                locale={locale}
+                rates={rates}
+                inUsdLabel={messages.planner.inUsd}
+                editAria={messages.planner.budgetEditAria}
+                onChangeUsd={(budgetUsd) => updatePlan({ budgetUsd })}
+              />
+            </div>
+          ) : null}
+
+          {activeId === "style" ? (
+            <div className="mt-7">
+              <p className="max-w-2xl text-sm leading-relaxed text-ink-soft">
+                {messages.planner.styleHint}
               </p>
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {styles.map((style) => {
                   const Icon = styleIcons[style];
                   const active = plan.style === style;
@@ -396,12 +404,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                     <button
                       key={style}
                       type="button"
-                      onClick={() =>
-                        updatePlan({
-                          style,
-                          budgetUsd: defaultBudget(style, plan.days, plan.travelers),
-                        })
-                      }
+                      onClick={() => updatePlan({ style })}
                       className={cn(
                         "flex gap-3 rounded-[1.4rem] border p-4 text-left transition",
                         active
@@ -785,6 +788,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
           currency={currency}
           locale={locale}
           budgetLocal={budgetLocal}
+          budgetFlexible={plan.budgetFlexible}
         />
       </div>
     </div>

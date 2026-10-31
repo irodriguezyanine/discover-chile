@@ -7,6 +7,7 @@ export const PLAN_STEP_IDS = [
   "country",
   "party",
   "budget",
+  "style",
   "interests",
   "regions",
   "route",

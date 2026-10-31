@@ -11,6 +11,7 @@ export function QuotePanel({
   currency,
   locale,
   budgetLocal,
+  budgetFlexible = true,
 }: {
   messages: Messages;
   estimate: Estimate;
@@ -18,6 +19,7 @@ export function QuotePanel({
   currency: string;
   locale: string;
   budgetLocal: number;
+  budgetFlexible?: boolean;
 }) {
   const over = budgetLocal > 0 && localTotal > budgetLocal;
   const items = [
@@ -50,9 +52,18 @@ export function QuotePanel({
       </p>
       {budgetLocal > 0 ? (
         <div className="mt-5">
-          <div className="mb-1.5 flex justify-between text-[11px] uppercase tracking-wider text-cream/50">
-            <span>{messages.planner.vsBudget}</span>
-            <span className={over ? "text-[#f0a3ad]" : "text-glacier"}>
+          <div className="mb-1.5 flex justify-between gap-2 text-[11px] uppercase tracking-wider text-cream/50">
+            <span className="min-w-0 truncate">
+              {messages.planner.vsBudget}
+              <span className="text-cream/35">
+                {" "}
+                ·{" "}
+                {budgetFlexible
+                  ? messages.planner.budgetFlexible
+                  : messages.planner.budgetFixed}
+              </span>
+            </span>
+            <span className={over ? "shrink-0 text-[#f0a3ad]" : "shrink-0 text-glacier"}>
               {over ? messages.planner.over : messages.planner.under}
             </span>
           </div>

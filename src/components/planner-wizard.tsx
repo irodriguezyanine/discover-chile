@@ -42,6 +42,7 @@ import {
 import { InterestPicker } from "@/components/interest-picker";
 import { JourneyProgress } from "@/components/journey-progress";
 import { MoveOptionsCard } from "@/components/move-options-card";
+import { RegionPicker } from "@/components/region-picker";
 import { SuggestedSpine } from "@/components/suggested-spine";
 import { usePlanner } from "@/components/planner-context";
 import { cn } from "@/lib/cn";
@@ -436,132 +437,13 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
           ) : null}
 
           {activeId === "regions" ? (
-            <div className="mt-6">
-              <div className="flex flex-wrap items-end justify-between gap-3">
-                <p className="max-w-xl text-sm leading-relaxed text-ink-soft">
-                  {messages.planner.regionsHint}
-                </p>
-                <span className="rounded-full bg-pine/10 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-pine">
-                  {plan.regions.length} {messages.planner.addedToPlan}
-                </span>
-              </div>
-              <div className="mt-4 grid gap-3">
-                {destinations.map((destination) => {
-                  const active = plan.regions.includes(destination.id);
-                  const delta =
-                    estimateTrip({
-                      ...plan,
-                      eco,
-                      regions: active
-                        ? plan.regions.filter((id) => id !== destination.id)
-                        : [...plan.regions, destination.id],
-                    }).totalUsd - estimate.totalUsd;
-                  const hidden =
-                    plan.style === "camper" && !destination.camperFriendly;
-                  const matchesInterest =
-                    plan.interests.length === 0 ||
-                    destination.interests.some((item) =>
-                      plan.interests.includes(item),
-                    );
-                  return (
-                    <button
-                      key={destination.id}
-                      type="button"
-                      aria-pressed={active}
-                      onClick={() =>
-                        updatePlan({
-                          regions: active
-                            ? plan.regions.filter((id) => id !== destination.id)
-                            : [...plan.regions, destination.id],
-                        })
-                      }
-                      className={cn(
-                        "group flex overflow-hidden rounded-[1.45rem] border text-left transition duration-200",
-                        active
-                          ? "border-pine/40 bg-[#14261c] text-cream shadow-[0_14px_34px_rgba(12,40,24,0.28)]"
-                          : "border-line/70 bg-white hover:-translate-y-0.5 hover:border-pine/30 hover:shadow-md",
-                        !matchesInterest && !active ? "opacity-55" : "",
-                      )}
-                    >
-                      <div className="relative h-28 w-24 shrink-0 md:h-32 md:w-40">
-                        <Image
-                          src={destination.image}
-                          alt={pick(destination.imageAlt, locale)}
-                          fill
-                          className={cn(
-                            "object-cover transition",
-                            active ? "brightness-95 saturate-110" : "",
-                          )}
-                          sizes="160px"
-                        />
-                        <ChileFlag
-                          variant="circle"
-                          className="absolute top-2 left-2 size-6 ring-1 ring-white/70"
-                        />
-                        {active ? (
-                          <span className="absolute right-2 bottom-2 rounded-full bg-pine px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-cream">
-                            {messages.planner.addedToPlan}
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="flex flex-1 items-start justify-between gap-3 p-4">
-                        <div>
-                          <p
-                            className={cn(
-                              "text-[10px] uppercase tracking-[0.2em]",
-                              active ? "text-glacier" : "text-terracotta",
-                            )}
-                          >
-                            {pick(destination.region, locale)}
-                          </p>
-                          <p className="font-display text-xl">
-                            {pick(destination.name, locale)}
-                          </p>
-                          <p
-                            className={cn(
-                              "mt-1 line-clamp-2 text-sm",
-                              active ? "text-cream/70" : "text-ink-soft",
-                            )}
-                          >
-                            {pick(destination.summary, locale)}
-                          </p>
-                          {hidden ? (
-                            <p className="mt-2 text-xs text-[#f0a3ad]">
-                              {messages.styles.camperD}
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="flex shrink-0 flex-col items-end gap-2">
-                          <p
-                            className={cn(
-                              "rounded-full px-2.5 py-1 text-xs font-medium tabular-nums",
-                              active
-                                ? "bg-white/10 text-cream"
-                                : "bg-sand text-ink",
-                            )}
-                          >
-                            {delta >= 0 ? "+" : "−"}
-                            {formatMoney(Math.abs(delta), "USD", "en")}
-                          </p>
-                          <span
-                            className={cn(
-                              "rounded-full px-2.5 py-1 text-[10px] uppercase tracking-[0.14em]",
-                              active
-                                ? "bg-glacier/20 text-glacier"
-                                : "bg-sand-deep text-ink-soft",
-                            )}
-                          >
-                            {active
-                              ? messages.planner.addedToPlan
-                              : messages.planner.addToPlan}
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            <RegionPicker
+              messages={messages}
+              locale={locale}
+              plan={plan}
+              eco={eco}
+              onChangeRegions={(regions) => updatePlan({ regions })}
+            />
           ) : null}
 
           {activeId === "move" ? (

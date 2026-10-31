@@ -16,6 +16,7 @@ import type { Locale } from "@/i18n/config";
 import { getCountryProfile } from "@/data/countries";
 import type { PlannerInput } from "@/lib/estimate";
 import { planStepIndex } from "@/lib/plan-steps";
+import { persistGuestToSupabase } from "@/lib/supabase/guests";
 
 export const initialPlan: PlannerInput = {
   country: "US",
@@ -228,6 +229,14 @@ export function PlannerProvider({
         // Welcome already collected country — plan steps start at party (index 0).
         setStep(planStepIndex("party", saved));
       }
+      void persistGuestToSupabase({
+        name: saved.name,
+        country: saved.country,
+        cursor: saved.cursor,
+        travelers: saved.travelers,
+        days: saved.days,
+        style: saved.style,
+      });
       goHome();
     },
     [goHome],

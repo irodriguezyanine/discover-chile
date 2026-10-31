@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -34,7 +33,6 @@ import { pick } from "@/i18n/loc";
 import { interpolate } from "@/lib/interpolate";
 import { QuotePanel } from "@/components/quote-panel";
 import { CountryFlag } from "@/components/country-flag";
-import { ChileFlag } from "@/components/chile-flag";
 import {
   BudgetAmountField,
   BudgetFlexSwitch,

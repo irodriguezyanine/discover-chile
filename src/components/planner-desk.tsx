@@ -54,7 +54,7 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
     <>
       <div
         className={cn(
-          "fixed inset-0 z-40 no-print",
+          "fixed inset-0 z-[70] no-print",
           open ? "pointer-events-auto" : "hidden",
         )}
         aria-hidden={!open}
@@ -64,7 +64,7 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
           type="button"
           tabIndex={open ? 0 : -1}
           aria-label={messages.planner.minimize}
-          className="absolute inset-0 bg-night/55 backdrop-blur-[6px]"
+          className="absolute inset-0 hidden bg-night/55 backdrop-blur-[6px] md:block"
           onClick={minimize}
         />
         <div
@@ -72,29 +72,20 @@ export function PlannerDesk({ messages }: { messages: Messages }) {
           aria-modal="true"
           aria-label={messages.planner.windowTitle}
           className={cn(
-            "absolute inset-x-0 top-0 bottom-0 flex max-w-6xl flex-col overflow-hidden bg-cream shadow-[0_40px_80px_rgba(8,20,16,0.45)] md:inset-x-6 md:top-[4.6rem] md:bottom-3 md:mx-auto md:rounded-[1.75rem]",
+            "absolute inset-0 flex flex-col overflow-hidden bg-cream pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] shadow-[0_40px_80px_rgba(8,20,16,0.45)] md:inset-x-6 md:inset-y-4 md:mx-auto md:max-w-6xl md:rounded-[1.75rem] md:pt-0 md:pb-0",
             open ? "planner-window opacity-100" : "opacity-0",
           )}
         >
           <div className="flex items-center justify-between gap-3 border-b border-line bg-night px-4 py-3 text-cream md:px-5">
-            <div className="flex min-w-0 items-center gap-3">
-              <ChileFlag
-                variant="circle"
-                className="hidden size-9 shrink-0 ring-2 ring-white/80 shadow-md md:block"
-              />
-              <div className="min-w-0">
-                <p className="hidden text-[10px] uppercase tracking-[0.28em] text-glacier md:block">
-                  Discover Chile
-                </p>
-                <p className="truncate font-display text-lg leading-tight md:text-xl">
-                  {messages.planner.windowTitle}
-                </p>
-              </div>
+            <div className="min-w-0">
+              <p className="truncate font-display text-lg leading-tight md:text-xl">
+                {messages.planner.windowTitle}
+              </p>
             </div>
             <button
               type="button"
               onClick={minimize}
-              className="grid size-10 shrink-0 place-items-center rounded-full border border-white/15 bg-white/5 text-cream hover:bg-white/10"
+              className="grid size-11 shrink-0 place-items-center rounded-full border border-white/15 bg-white/5 text-cream hover:bg-white/10"
               title={messages.planner.minimize}
               aria-label={messages.planner.minimize}
             >

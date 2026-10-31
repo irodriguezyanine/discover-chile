@@ -72,7 +72,7 @@ const styleIcons = {
 } as const;
 export function PlannerWizard({ messages }: { messages: Messages }) {
   const router = useRouter();
-  const { plan, updatePlan, step, setStep, locale, guest } = usePlanner();
+  const { plan, updatePlan, step, setStep, locale, guest, minimize } = usePlanner();
   const [query, setQuery] = useState("");
   const [copied, setCopied] = useState(false);
   const [rates, setRates] = useState<Record<string, number>>(fallbackRates);
@@ -128,6 +128,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
 
   const finishPlan = async () => {
     await share();
+    minimize();
   };
 
   const isDesktop = useIsDesktopViewport();
@@ -658,7 +659,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                   <button
                     type="button"
                     onClick={finishPlan}
-                    className="w-full rounded-full bg-night px-5 py-3.5 text-sm font-medium text-cream md:w-auto"
+                    className="w-full rounded-full bg-terracotta px-5 py-4 text-base font-medium text-cream shadow-[0_10px_28px_rgba(196,92,38,0.28)] hover:bg-terracotta-deep md:w-auto md:px-8"
                   >
                     {copied ? messages.planner.planSaved : messages.planner.finishPlan}
                   </button>
@@ -694,7 +695,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
               <button
                 type="button"
                 onClick={finishPlan}
-                className="rounded-full bg-night px-5 py-2.5 text-sm font-medium text-cream hover:bg-night/90"
+                className="rounded-full bg-terracotta px-5 py-2.5 text-sm font-medium text-cream hover:bg-terracotta-deep"
               >
                 {copied ? messages.planner.planSaved : messages.planner.finishPlan}
               </button>

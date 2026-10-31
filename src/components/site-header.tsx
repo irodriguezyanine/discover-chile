@@ -42,6 +42,9 @@ export function SiteHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Planner owns the viewport — logo / hamburger live only when it is closed.
+  if (open) return null;
+
   return (
     <header
       className={cn(
@@ -50,7 +53,6 @@ export function SiteHeader({
           ? cn(
               "fixed",
               light ? "bg-transparent" : "bg-sand/90 backdrop-blur border-b border-line",
-              open && "bg-night/70 backdrop-blur-md border-transparent",
             )
           : "sticky border-b border-line bg-sand/90 backdrop-blur",
       )}

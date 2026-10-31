@@ -202,7 +202,7 @@ export function WelcomeIdentityFields({
 
       <label className="block">
         <span className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
-          {desk.phoneHi}
+          {desk.holaPo}
         </span>
         <span className="mt-2 block font-display text-2xl leading-tight">
           {desk.phoneNameQ}

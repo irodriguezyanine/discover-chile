@@ -109,15 +109,15 @@ export function TravelDesk({
   ] as const;
 
   return (
-    <div className={cn("bg-sand text-ink", phone && "pb-28")}>
+    <div className={cn("relative text-ink", phone && "pb-28")}>
       {phone && tab === "tips" ? (
-        <section className="fixed inset-x-0 top-[calc(3.55rem+env(safe-area-inset-top))] bottom-[4.7rem] z-10 overflow-y-auto bg-sand px-4 py-4">
+        <section className="fixed inset-x-0 top-[calc(3.55rem+env(safe-area-inset-top))] bottom-[4.7rem] z-10 overflow-y-auto px-4 py-4">
           <TipsHub locale={locale} messages={messages} />
         </section>
       ) : null}
 
       {phone && tab === "map" ? (
-        <section className="fixed inset-x-0 top-[calc(3.55rem+env(safe-area-inset-top))] bottom-[4.7rem] z-10 overflow-hidden bg-sand">
+        <section className="fixed inset-x-0 top-[calc(3.55rem+env(safe-area-inset-top))] bottom-[4.7rem] z-10 overflow-hidden bg-sand/92">
           <ChileLiveMap
             destinations={destinations}
             locale={locale}
@@ -132,7 +132,7 @@ export function TravelDesk({
 
       {phone ? null : (
         <>
-          <section className="bg-sand">
+          <section className="relative z-10">
             <div className="mx-auto max-w-6xl px-4 pb-4 pt-24 md:px-6 md:pt-32">
               <div className="relative">
                 <p className="text-[11px] uppercase tracking-[0.34em] text-terracotta">
@@ -193,7 +193,7 @@ export function TravelDesk({
             </div>
           </section>
 
-          <section className="bg-sand">
+          <section className="relative z-10">
             <div className="mx-auto grid max-w-6xl items-start gap-8 px-4 py-4 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-8">
               <div>
                 <p className="mb-3 text-sm text-terracotta">
@@ -261,13 +261,13 @@ export function TravelDesk({
             </div>
           </section>
 
-          <section id="pack-ride" className="border-t border-ink/8 px-4 py-10 md:px-6">
+          <section id="pack-ride" className="relative z-10 border-t border-ink/8 px-4 py-10 md:px-6">
             <div className="mx-auto max-w-6xl">
               <TravelOptions zoneId={destinationId} locale={locale} messages={messages} />
             </div>
           </section>
 
-          <section id="pack-walk" className="px-4 pb-8 md:px-6">
+          <section id="pack-walk" className="relative z-10 px-4 pb-8 md:px-6">
             <div className="mx-auto grid max-w-6xl gap-5 md:grid-cols-[1.1fr_0.9fr]">
               <article className="rounded-[1.8rem] bg-cream p-6 ring-1 ring-ink/8 md:p-8">
                 <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
@@ -321,7 +321,7 @@ export function TravelDesk({
             </div>
           </section>
 
-          <section className="border-t border-ink/8 px-4 py-8 md:px-6">
+          <section className="relative z-10 border-t border-ink/8 px-4 py-8 md:px-6">
             <div className="mx-auto max-w-6xl">
               <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
                 {messages.desk.sights}
@@ -338,7 +338,7 @@ export function TravelDesk({
             </div>
           </section>
 
-          <section className="pb-10">
+          <section className="relative z-10 pb-10">
             <div className="mx-auto max-w-6xl px-4 md:px-6">
               <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
                 {messages.desk.spine}

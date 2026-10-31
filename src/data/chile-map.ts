@@ -19,8 +19,9 @@ export type MapPin = {
 };
 
 /**
- * Geographic-feeling Chile silhouette (not blocky rectangles).
- * viewBox 0 0 320 760 — long thin strip with fjords, Chiloé and Rapa Nui inset.
+ * Geographic Chile silhouette — long thin strip (not stacked rectangles/blobs).
+ * Zones share borders so the country reads as one continuous drawing.
+ * viewBox 0 0 320 760 — Chiloé + Rapa Nui as insets.
  */
 export const mapZones: {
   id: MapZoneId;
@@ -31,66 +32,74 @@ export const mapZones: {
   {
     id: "atacama",
     fill: "#d4b896",
-    d: "M188 28 C196 26 214 30 222 38 C232 52 238 72 244 96 C250 124 254 152 248 176 C242 196 228 208 214 214 L176 210 C168 190 166 164 168 138 C170 108 174 78 178 54 C180 40 182 32 188 28 Z",
+    // Arica → San Pedro: thin desert ribbon, Pacific west / altiplano east
+    d: "M196 22 C204 20 214 24 220 32 C228 48 234 72 238 100 C242 130 244 158 240 182 C236 198 228 206 218 210 L186 206 C178 188 174 160 176 132 C178 100 182 68 186 44 C188 30 190 24 196 22 Z",
   },
   {
     id: "santiago-wine",
     fill: "#c45c26",
-    d: "M176 210 C196 212 214 214 222 224 C230 238 234 256 232 274 C228 292 214 304 196 306 L164 300 C156 284 154 262 156 244 C158 228 164 216 176 210 Z",
+    // La Serena → Valparaíso / Santiago corridor
+    d: "M186 206 C200 208 214 210 218 210 C226 220 230 238 228 258 C224 278 214 292 200 296 L172 290 C164 274 162 252 164 234 C166 218 174 208 186 206 Z",
   },
   {
     id: "ski",
     fill: "#7eb8c6",
-    d: "M222 224 C236 228 248 236 250 252 C248 268 238 278 226 280 L218 268 C216 252 218 236 222 224 Z",
+    // Andes ski belt east of Santiago
+    d: "M218 210 C230 214 240 224 242 242 C240 258 232 268 222 270 L214 258 C212 240 214 222 218 210 Z",
   },
   {
     id: "lakes",
     fill: "#1f4a3c",
-    d: "M164 300 C184 304 204 308 214 322 C222 340 220 362 214 384 C206 404 190 414 172 412 L148 400 C144 376 146 350 150 328 C154 312 158 304 164 300 Z",
+    // Temuco → Puerto Varas lakes district
+    d: "M172 290 C190 294 206 300 212 316 C218 336 216 358 210 378 C202 396 188 404 174 402 L152 390 C148 368 150 344 154 324 C158 308 164 294 172 290 Z",
   },
   {
     id: "chiloe",
     fill: "#3f735f",
     island: true,
-    d: "M118 372 C132 362 152 368 158 386 C160 408 148 430 132 436 C116 430 108 404 112 386 C114 376 116 372 118 372 Z",
+    // Chiloé archipelago west of the lakes
+    d: "M112 368 C124 358 142 364 148 380 C150 400 140 420 126 426 C112 420 104 396 108 380 C110 372 110 368 112 368 Z",
   },
   {
     id: "carretera",
     fill: "#4f7a68",
-    d: "M148 400 C168 408 188 414 198 430 C206 452 210 480 204 512 C196 544 182 568 168 580 L146 556 C142 520 140 480 142 448 C144 422 146 408 148 400 Z",
+    // Carretera Austral: narrow fjord spine
+    d: "M152 390 C168 398 184 408 190 426 C196 450 198 478 194 508 C188 540 176 562 164 574 L146 552 C142 520 140 484 142 452 C144 424 146 404 152 390 Z",
   },
   {
     id: "patagonia",
     fill: "#3d6d7a",
-    d: "M146 556 C162 568 178 584 190 610 C202 640 214 668 218 692 C212 712 196 724 176 726 C158 722 146 708 140 688 C136 660 138 628 142 600 C144 578 146 564 146 556 Z",
+    // Magallanes flare + tip toward Cape Horn
+    d: "M146 552 C160 564 174 580 184 604 C194 632 206 660 210 686 C204 708 188 720 168 722 C150 718 140 704 136 684 C132 656 134 624 138 598 C140 576 142 560 146 552 Z",
   },
   {
     id: "rapanui",
     fill: "#9a3f16",
     island: true,
-    d: "M48 206 C62 192 86 196 92 216 C90 238 70 250 50 242 C36 230 36 214 48 206 Z",
+    // Rapa Nui inset in the Pacific
+    d: "M44 200 C56 188 78 192 84 210 C82 230 64 242 46 234 C34 224 34 208 44 200 Z",
   },
 ];
 
 /** Static fallback — prefer live pins from Supabase `chile_region_pins`. */
 export const mapPins: MapPin[] = [
-  { id: "arica", zone: "atacama", x: 200, y: 48, label: "Arica", featured: true },
-  { id: "iquique", zone: "atacama", x: 214, y: 88, label: "Iquique" },
-  { id: "calama", zone: "atacama", x: 236, y: 132, label: "Calama" },
-  { id: "spa", zone: "atacama", x: 228, y: 168, label: "San Pedro", featured: true },
-  { id: "serena", zone: "santiago-wine", x: 172, y: 226, label: "La Serena" },
-  { id: "valpo", zone: "santiago-wine", x: 168, y: 258, label: "Valparaíso", featured: true },
-  { id: "scl", zone: "santiago-wine", x: 198, y: 268, label: "Santiago", featured: true },
-  { id: "farellones", zone: "ski", x: 236, y: 252, label: "Farellones" },
-  { id: "temuco", zone: "lakes", x: 176, y: 340, label: "Temuco" },
-  { id: "pucon", zone: "lakes", x: 192, y: 368, label: "Pucón", featured: true },
-  { id: "varas", zone: "lakes", x: 168, y: 392, label: "Pto. Varas" },
-  { id: "castro", zone: "chiloe", x: 134, y: 404, label: "Castro", featured: true },
-  { id: "coyhaique", zone: "carretera", x: 178, y: 492, label: "Coyhaique", featured: true },
-  { id: "castillo", zone: "carretera", x: 186, y: 532, label: "Cerro Castillo" },
-  { id: "natales", zone: "patagonia", x: 186, y: 640, label: "Natales", featured: true },
-  { id: "punta", zone: "patagonia", x: 198, y: 688, label: "Punta Arenas", featured: true },
-  { id: "hanga", zone: "rapanui", x: 68, y: 222, label: "Hanga Roa", featured: true },
+  { id: "arica", zone: "atacama", x: 204, y: 42, label: "Arica", featured: true },
+  { id: "iquique", zone: "atacama", x: 216, y: 82, label: "Iquique" },
+  { id: "calama", zone: "atacama", x: 232, y: 128, label: "Calama" },
+  { id: "spa", zone: "atacama", x: 224, y: 172, label: "San Pedro", featured: true },
+  { id: "serena", zone: "santiago-wine", x: 176, y: 222, label: "La Serena" },
+  { id: "valpo", zone: "santiago-wine", x: 172, y: 252, label: "Valparaíso", featured: true },
+  { id: "scl", zone: "santiago-wine", x: 198, y: 264, label: "Santiago", featured: true },
+  { id: "farellones", zone: "ski", x: 232, y: 246, label: "Farellones" },
+  { id: "temuco", zone: "lakes", x: 180, y: 332, label: "Temuco" },
+  { id: "pucon", zone: "lakes", x: 196, y: 358, label: "Pucón", featured: true },
+  { id: "varas", zone: "lakes", x: 170, y: 384, label: "Pto. Varas" },
+  { id: "castro", zone: "chiloe", x: 128, y: 398, label: "Castro", featured: true },
+  { id: "coyhaique", zone: "carretera", x: 176, y: 486, label: "Coyhaique", featured: true },
+  { id: "castillo", zone: "carretera", x: 182, y: 528, label: "Cerro Castillo" },
+  { id: "natales", zone: "patagonia", x: 182, y: 636, label: "Natales", featured: true },
+  { id: "punta", zone: "patagonia", x: 192, y: 684, label: "Punta Arenas", featured: true },
+  { id: "hanga", zone: "rapanui", x: 64, y: 218, label: "Hanga Roa", featured: true },
 ];
 
 export const mapCycle: MapZoneId[] = [

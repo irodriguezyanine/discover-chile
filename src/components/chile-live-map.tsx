@@ -159,10 +159,10 @@ export function ChileLiveMap({
           </text>
 
           <line
-            x1="92"
-            y1="220"
-            x2="176"
-            y2="208"
+            x1="84"
+            y1="214"
+            x2="186"
+            y2="206"
             stroke={ocean}
             strokeDasharray="5 6"
             strokeOpacity="0.45"

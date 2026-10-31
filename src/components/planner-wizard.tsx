@@ -569,6 +569,8 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
               locale={locale}
               estimate={estimate}
               eco={eco}
+              style={plan.style}
+              regions={plan.regions}
             />
           ) : null}
 

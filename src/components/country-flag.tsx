@@ -1,3 +1,4 @@
+import { flagEmoji } from "@/lib/flag-emoji";
 import { cn } from "@/lib/cn";
 
 export function CountryFlag({
@@ -10,17 +11,12 @@ export function CountryFlag({
   return (
     <span
       className={cn(
-        "relative inline-block shrink-0 overflow-hidden rounded-full bg-sand-deep shadow-sm ring-1 ring-black/10",
+        "grid size-5 shrink-0 place-items-center overflow-hidden rounded-full bg-sand-deep text-[0.95rem] leading-none shadow-sm ring-1 ring-black/10",
         className,
       )}
+      aria-hidden
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={`https://flagcdn.com/w80/${code.toLowerCase()}.png`}
-        alt=""
-        draggable={false}
-        className="h-full w-full object-cover"
-      />
+      {flagEmoji(code)}
     </span>
   );
 }

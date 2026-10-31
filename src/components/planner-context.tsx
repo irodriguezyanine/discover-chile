@@ -144,9 +144,13 @@ export function PlannerProvider({
 
   const guest = guestOverride === undefined ? storedGuest : guestOverride;
   const gate = gateOverride ?? storedGate;
+  const guestSeedPlan = useMemo(
+    () => (storedGuest ? planFromGuest(storedGuest) : null),
+    [storedGuest],
+  );
   const planValue =
-    !planTouched && guestOverride === undefined && storedGuest
-      ? planFromGuest(storedGuest)
+    !planTouched && guestOverride === undefined && guestSeedPlan
+      ? guestSeedPlan
       : plan;
 
   const updatePlan = useCallback((patch: Partial<PlannerInput>) => {

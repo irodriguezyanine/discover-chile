@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { startTransition, useDeferredValue, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Check, Search } from "lucide-react";
 import {
@@ -19,6 +19,8 @@ import {
 } from "@/components/currency-context";
 import { CountryFlag } from "@/components/country-flag";
 import { cn } from "@/lib/cn";
+
+const POPULAR_VISIBLE = ["CL", ...popularCountryCodes].slice(0, 8);
 
 const localeOrder: Locale[] = [
   "es",
@@ -60,7 +62,10 @@ export function WelcomeLanguageStep({
     document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000`;
     const segments = pathname.split("/");
     segments[1] = next;
-    router.replace(segments.join("/") || `/${next}`);
+    const href = segments.join("/") || `/${next}`;
+    startTransition(() => {
+      router.replace(href);
+    });
   };
 
   return (
@@ -134,21 +139,27 @@ export function WelcomeCountryStep({
 }) {
   const { setCurrency } = useCurrency();
   const [query, setQuery] = useState("");
+  const deferredQuery = useDeferredValue(query);
 
   const matches = useMemo(() => {
+    const trimmed = deferredQuery.trim();
+    if (!trimmed) return POPULAR_VISIBLE;
     const all = allCountryCodes();
-    if (!query.trim()) return [];
-    const q = query.toLowerCase();
-    return all.filter(
-      (code) =>
-        countryName(code, locale).toLowerCase().includes(q) ||
-        code.toLowerCase().includes(q),
-    );
-  }, [locale, query]);
+    const q = trimmed.toLowerCase();
+    const next: string[] = [];
+    for (const code of all) {
+      if (
+        code.toLowerCase().includes(q) ||
+        countryName(code, locale).toLowerCase().includes(q)
+      ) {
+        next.push(code);
+        if (next.length >= 8) break;
+      }
+    }
+    return next;
+  }, [locale, deferredQuery]);
 
-  const visible = query.trim()
-    ? matches.slice(0, 8)
-    : ["CL", ...popularCountryCodes].slice(0, 8);
+  const visible = matches;
 
   const pickCountry = (code: string) => {
     onCountry(code);
@@ -264,7 +275,7 @@ export function WelcomeCursorStep({
                 aria-label={item.label}
                 aria-pressed={active}
                 className={cn(
-                  "grid h-[4.6rem] w-full place-items-center rounded-[1.2rem] bg-white ring-1 transition",
+                  "grid h-[4.6rem] w-full place-items-center rounded-[1.2rem] bg-white ring-1",
                   active
                     ? "ring-2 ring-terracotta"
                     : "ring-black/10 hover:ring-terracotta/40",

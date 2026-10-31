@@ -1,14 +1,14 @@
 "use client";
 
-import { memo, useSyncExternalStore, type ReactNode } from "react";
+import { memo, useEffect, useState, type ReactNode } from "react";
 import { usePlanner } from "@/components/planner-context";
 
 function useHasMounted() {
-  return useSyncExternalStore(
-    () => () => undefined,
-    () => true,
-    () => false,
-  );
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  return mounted;
 }
 
 /**

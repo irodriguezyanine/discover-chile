@@ -22,6 +22,7 @@ export const en = {
     subtitle:
       "Atacama, wine valleys, lakes, Patagonia, Easter Island. We ask where you fly from, what you can spend, and which Chiles you want — then the quote moves like a cart, in your currency.",
     cta: "Build my route",
+    ctaMyPlan: "My plan",
     secondary: "See destinations",
   },
   stats: {

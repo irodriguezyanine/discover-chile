@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
+  ArrowLeft,
   ChevronUp,
   Handshake,
   LifeBuoy,
@@ -11,7 +12,12 @@ import {
   Utensils,
   X,
 } from "lucide-react";
-import { chileanFoods, chileanPhrases } from "@/data/chile-desk";
+import { chileanPhrases } from "@/data/chile-desk";
+import {
+  cultureAt,
+  cultureRoot,
+  type CultureNode,
+} from "@/data/culture-browser";
 import { img } from "@/data/images";
 import { tipSheets } from "@/data/tip-sheets";
 import { fuelBrands } from "@/data/fuel";
@@ -274,48 +280,202 @@ function SlangPanel({ locale, messages }: { locale: Locale; messages: Messages }
   );
 }
 
-function CulturePanel({ locale, messages }: { locale: Locale; messages: Messages }) {
-  const desk = messages.desk;
+const cultureHeroIds = new Set([
+  "foods",
+  "drinks",
+  "games",
+  "sports",
+  "futbol",
+  "mar",
+  "tierra",
+  "fast",
+]);
+const cultureWideIds = new Set([
+  "colo",
+  "u",
+  "catolica",
+  "empanada",
+  "completos",
+  "congrio",
+  "curanto",
+  "asado",
+  "rodeo",
+  "ski",
+  "trekking",
+]);
+
+function CultureTeamChrome({
+  item,
+  locale,
+}: {
+  item: CultureNode;
+  locale: Locale;
+}) {
+  if (!item.logo && !item.colors?.length && !item.stats?.length) return null;
   return (
-    <div className="space-y-4">
-      <article className="rounded-[1.3rem] bg-white px-4 py-4 ring-1 ring-black/[0.06]">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-terracotta">
-          {desk.when}
-        </p>
-        <ul className="mt-3 space-y-2 text-sm text-ink-soft">
-          {[desk.when1, desk.when2, desk.when3, desk.when4].map((text) => (
-            <li key={text} className="rounded-xl bg-sand px-3 py-2.5">
-              {text}
+    <div className="mb-4 space-y-3">
+      {item.colors?.length ? (
+        <ul className="flex min-w-0 flex-wrap gap-2">
+          {item.colors.map((color) => (
+            <li
+              key={color.hex}
+              className="flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 ring-1 ring-black/[0.06]"
+            >
+              <span
+                className="size-3.5 rounded-full ring-1 ring-black/15"
+                style={{ background: color.hex }}
+              />
+              <span className="text-[11px] uppercase tracking-[0.12em] text-ink-soft">
+                {pick(color.name, locale)}
+              </span>
             </li>
           ))}
         </ul>
-      </article>
-      <article className="rounded-[1.3rem] bg-white px-4 py-4 ring-1 ring-black/[0.06]">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-terracotta">
-          {desk.foods}
-        </p>
-        <ul className="mt-3 space-y-2 text-sm text-ink-soft">
-          {chileanFoods.slice(0, 4).map((food) => (
-            <li key={food.id} className="rounded-xl bg-sand px-3 py-2.5">
-              <span className="font-medium text-ink">{pick(food.name, locale)}</span>
-              {" — "}
-              {pick(food.note, locale)}
+      ) : null}
+      {item.stats?.length ? (
+        <ul className="grid grid-cols-3 gap-2">
+          {item.stats.map((stat) => (
+            <li
+              key={pick(stat.label, locale)}
+              className="rounded-xl bg-white px-2 py-2 text-center ring-1 ring-black/[0.06]"
+            >
+              <p className="text-[10px] uppercase tracking-[0.14em] text-terracotta">
+                {pick(stat.label, locale)}
+              </p>
+              <p className="mt-1 font-display text-lg leading-none">{stat.value}</p>
             </li>
           ))}
         </ul>
-      </article>
-      <article className="rounded-[1.3rem] bg-white px-4 py-4 ring-1 ring-black/[0.06]">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-terracotta">
-          {desk.sights}
+      ) : null}
+    </div>
+  );
+}
+
+function CulturePanel({
+  locale,
+  messages,
+}: {
+  locale: Locale;
+  messages: Messages;
+}) {
+  const desk = messages.desk;
+  const [path, setPath] = useState<string[]>([]);
+  const node = cultureAt(path) ?? cultureRoot;
+  const parent = path.length
+    ? (cultureAt(path.slice(0, -1)) ?? cultureRoot)
+    : null;
+  const children = node.children ?? [];
+  const showHero =
+    !!node.image &&
+    (!children.length || !!node.colors?.length || !!node.stats?.length);
+
+  return (
+    <div>
+      {path.length ? (
+        <header className="mb-4 flex items-start gap-3">
+          <button
+            type="button"
+            onClick={() => setPath((current) => current.slice(0, -1))}
+            className="mt-0.5 grid size-10 shrink-0 place-items-center rounded-full bg-white ring-1 ring-black/10"
+            aria-label={parent ? pick(parent.title, locale) : desk.tipsCulture}
+            title={parent ? pick(parent.title, locale) : desk.tipsCulture}
+          >
+            <ArrowLeft size={17} />
+          </button>
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.22em] text-terracotta">
+              {parent ? pick(parent.title, locale) : desk.tipsCulture}
+            </p>
+            <h3 className="mt-0.5 font-display text-2xl leading-tight">
+              {pick(node.title, locale)}
+            </h3>
+          </div>
+        </header>
+      ) : (
+        <p className="mb-4 text-sm leading-relaxed text-ink-soft">
+          {pick(cultureRoot.lead!, locale)}
         </p>
-        <ul className="mt-3 space-y-2 text-sm text-ink-soft">
-          {[desk.sight1, desk.sight2, desk.sight3, desk.sight4, desk.sight5, desk.sight6].map(
-            (text) => (
-              <li key={text}>{text}</li>
-            ),
-          )}
+      )}
+
+      <CultureTeamChrome item={node} locale={locale} />
+
+      {showHero && node.image ? (
+        <div className="relative mb-4 h-40 overflow-hidden rounded-[1.35rem] md:h-52">
+          <Image
+            src={node.image}
+            alt=""
+            fill
+            className="object-cover"
+            sizes="640px"
+          />
+        </div>
+      ) : null}
+
+      {node.lead && path.length > 0 ? (
+        <p className="text-sm leading-relaxed text-ink-soft">
+          {pick(node.lead, locale)}
+        </p>
+      ) : null}
+
+      {node.facts?.length ? (
+        <ul className="mt-4 grid gap-2 md:grid-cols-2">
+          {node.facts.map((fact) => (
+            <li
+              key={pick(fact.title, locale)}
+              className="rounded-[1.2rem] bg-white px-4 py-3 ring-1 ring-black/[0.06]"
+            >
+              <p className="text-[11px] uppercase tracking-[0.18em] text-terracotta">
+                {pick(fact.title, locale)}
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-ink">
+                {pick(fact.body, locale)}
+              </p>
+            </li>
+          ))}
         </ul>
-      </article>
+      ) : null}
+
+      {children.length ? (
+        <nav className="mt-4 grid grid-cols-2 gap-2.5 md:grid-cols-6 md:gap-3">
+          {children.map((child) => {
+            const size = cultureHeroIds.has(child.id)
+              ? "md"
+              : cultureWideIds.has(child.id)
+                ? "md"
+                : "sm";
+            const span = cultureHeroIds.has(child.id)
+              ? "md:col-span-3"
+              : "md:col-span-2";
+            return (
+              <TipTile
+                key={child.id}
+                image={child.image || tipImages.culture}
+                title={pick(child.title, locale)}
+                hint={child.hint ? pick(child.hint, locale) : desk.tipsCulture}
+                light={child.light}
+                size={size}
+                className={span}
+                onClick={() => setPath((current) => [...current, child.id])}
+              />
+            );
+          })}
+        </nav>
+      ) : null}
+
+      {!path.length ? (
+        <article className="mt-4 rounded-[1.3rem] bg-white px-4 py-4 ring-1 ring-black/[0.06]">
+          <p className="text-[10px] uppercase tracking-[0.22em] text-terracotta">
+            {desk.when}
+          </p>
+          <ul className="mt-3 space-y-2 text-sm text-ink-soft">
+            {[desk.when1, desk.when2, desk.when3, desk.when4].map((text) => (
+              <li key={text} className="rounded-xl bg-sand px-3 py-2.5">
+                {text}
+              </li>
+            ))}
+          </ul>
+        </article>
+      ) : null}
     </div>
   );
 }

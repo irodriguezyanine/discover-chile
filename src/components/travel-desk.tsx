@@ -313,7 +313,9 @@ export function TravelDesk({
                   {chileanFoods.map((food) => (
                     <li key={food.id}>
                       <p className="font-display text-xl">{pick(food.name, locale)}</p>
-                      <p className="text-sm text-ink-soft">{pick(food.note, locale)}</p>
+                      <p className="text-sm text-ink-soft">
+                        {pick(food.aka ?? food.note, locale)}
+                      </p>
                     </li>
                   ))}
                 </ul>

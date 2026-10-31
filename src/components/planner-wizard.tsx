@@ -283,20 +283,38 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                 <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.22em] text-ink-soft">
                   <Users size={14} /> {messages.planner.travelers}
                 </p>
-                <div className="mt-6 flex items-center justify-between">
+                <div className="mt-6 flex items-center justify-between gap-3">
                   <button
                     type="button"
-                    className="grid size-11 place-items-center rounded-full border border-line hover:border-terracotta"
-                    onClick={() => nudge("travelers", -1, 1, 8)}
+                    className="grid size-11 shrink-0 place-items-center rounded-full border border-line hover:border-terracotta disabled:opacity-40"
+                    onClick={() => nudge("travelers", -1, 1, Number.POSITIVE_INFINITY)}
+                    disabled={plan.travelers <= 1}
                     aria-label="-"
                   >
                     <Minus size={16} />
                   </button>
-                  <p className="font-display text-6xl leading-none">{plan.travelers}</p>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={plan.travelers}
+                    aria-label={messages.planner.travelers}
+                    onChange={(event) => {
+                      const digits = event.target.value.replace(/\D/g, "");
+                      if (!digits) {
+                        updatePlan({ travelers: 1 });
+                        return;
+                      }
+                      updatePlan({
+                        travelers: Math.max(1, Number.parseInt(digits, 10)),
+                      });
+                    }}
+                    className="w-full min-w-0 bg-transparent text-center font-display text-6xl leading-none text-ink outline-none"
+                  />
                   <button
                     type="button"
-                    className="grid size-11 place-items-center rounded-full border border-line hover:border-terracotta"
-                    onClick={() => nudge("travelers", 1, 1, 8)}
+                    className="grid size-11 shrink-0 place-items-center rounded-full border border-line hover:border-terracotta"
+                    onClick={() => nudge("travelers", 1, 1, Number.POSITIVE_INFINITY)}
                     aria-label="+"
                   >
                     <Plus size={16} />

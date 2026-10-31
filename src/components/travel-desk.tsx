@@ -117,7 +117,7 @@ export function TravelDesk({
       ) : null}
 
       {phone && tab === "map" ? (
-        <section className="fixed inset-x-0 top-[calc(3.55rem+env(safe-area-inset-top))] bottom-[4.7rem] z-10 overflow-hidden bg-sand/92">
+        <section className="fixed inset-x-0 top-[calc(3.55rem+env(safe-area-inset-top))] bottom-[4.7rem] z-10 overflow-hidden bg-transparent">
           <ChileLiveMap
             destinations={destinations}
             locale={locale}

@@ -11,6 +11,8 @@ export function QuotePanel({
   currency,
   locale,
   budgetLocal,
+  budgetPerPersonLocal,
+  travelers,
   budgetFlexible = true,
 }: {
   messages: Messages;
@@ -19,9 +21,12 @@ export function QuotePanel({
   currency: string;
   locale: string;
   budgetLocal: number;
+  budgetPerPersonLocal: number;
+  travelers: number;
   budgetFlexible?: boolean;
 }) {
   const over = budgetLocal > 0 && localTotal > budgetLocal;
+  const remaining = budgetLocal - localTotal;
   const items = [
     [messages.planner.lodging, estimate.lodgingUsd],
     [messages.planner.food, estimate.foodUsd],
@@ -31,7 +36,9 @@ export function QuotePanel({
     [messages.planner.fuel, estimate.fuelUsd],
   ] as const;
   const ratio =
-    budgetLocal > 0 ? Math.min(100, Math.round((localTotal / budgetLocal) * 100)) : 0;
+    budgetLocal > 0
+      ? Math.min(100, Math.round((localTotal / budgetLocal) * 100))
+      : 0;
 
   return (
     <aside className="flex h-full flex-col bg-night p-5 text-cream">
@@ -50,31 +57,68 @@ export function QuotePanel({
           ? ` · ${formatMoney(estimate.perPersonUsd, "USD", "en")} ${messages.planner.perPerson}`
           : ""}
       </p>
+
       {budgetLocal > 0 ? (
-        <div className="mt-5">
-          <div className="mb-1.5 flex justify-between gap-2 text-[11px] uppercase tracking-wider text-cream/50">
-            <span className="min-w-0 truncate">
-              {messages.planner.vsBudget}
-              <span className="text-cream/35">
-                {" "}
-                ·{" "}
-                {budgetFlexible
-                  ? messages.planner.budgetFlexible
-                  : messages.planner.budgetFixed}
-              </span>
-            </span>
-            <span className={over ? "shrink-0 text-[#f0a3ad]" : "shrink-0 text-glacier"}>
-              {over ? messages.planner.over : messages.planner.under}
+        <div className="mt-5 space-y-3 rounded-[1.2rem] bg-white/5 p-3.5 ring-1 ring-white/10">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-glacier">
+                {messages.planner.budgetCeiling}
+              </p>
+              <p className="mt-1 font-display text-xl tabular-nums">
+                {formatMoney(budgetLocal, currency, locale)}
+              </p>
+              <p className="mt-0.5 text-xs text-cream/50">
+                {formatMoney(budgetPerPersonLocal, currency, locale)}{" "}
+                {messages.planner.budgetPerPerson}
+                {" · "}
+                {travelers}×
+              </p>
+            </div>
+            <span
+              className={cn(
+                "rounded-full px-2 py-1 text-[10px] uppercase tracking-[0.12em]",
+                budgetFlexible
+                  ? "bg-glacier/20 text-glacier"
+                  : "bg-white/10 text-cream/70",
+              )}
+            >
+              {budgetFlexible
+                ? messages.planner.budgetFlexible
+                : messages.planner.budgetFixed}
             </span>
           </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
-            <div
-              className={cn("h-full rounded-full", over ? "bg-[#c45c6e]" : "bg-terracotta")}
-              style={{ width: `${ratio}%` }}
-            />
+
+          <div>
+            <div className="mb-1.5 flex justify-between gap-2 text-[11px] uppercase tracking-wider text-cream/50">
+              <span>{messages.planner.vsBudget}</span>
+              <span className={over ? "text-[#f0a3ad]" : "text-glacier"}>
+                {over ? messages.planner.over : messages.planner.under}
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div
+                className={cn(
+                  "h-full rounded-full",
+                  over ? "bg-[#c45c6e]" : "bg-terracotta",
+                )}
+                style={{ width: `${ratio}%` }}
+              />
+            </div>
+            <p
+              className={cn(
+                "mt-2 text-xs",
+                over ? "text-[#f0a3ad]" : "text-cream/55",
+              )}
+            >
+              {over ? messages.planner.budgetOver : messages.planner.budgetRemaining}
+              {": "}
+              {formatMoney(Math.abs(remaining), currency, locale)}
+            </p>
           </div>
         </div>
       ) : null}
+
       <dl className="mt-6 space-y-2.5 border-t border-white/10 pt-5 text-sm">
         <p className="text-[10px] uppercase tracking-[0.22em] text-glacier">
           {messages.planner.breakdown}
@@ -82,11 +126,11 @@ export function QuotePanel({
         {items
           .filter(([label, usd]) => usd > 0 || label !== messages.planner.fuel)
           .map(([label, usd]) => (
-          <div key={label} className="flex justify-between text-cream/80">
-            <dt>{label}</dt>
-            <dd className="tabular-nums">{formatMoney(usd, "USD", "en")}</dd>
-          </div>
-        ))}
+            <div key={label} className="flex justify-between text-cream/80">
+              <dt>{label}</dt>
+              <dd className="tabular-nums">{formatMoney(usd, "USD", "en")}</dd>
+            </div>
+          ))}
       </dl>
     </aside>
   );

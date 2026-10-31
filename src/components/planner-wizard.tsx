@@ -95,6 +95,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
   const localTotal = convertFromUsd(estimate.totalUsd, currency, rates);
   const partyBudgetUsd = plan.budgetUsd * Math.max(1, plan.travelers);
   const budgetLocal = convertFromUsd(partyBudgetUsd, currency, rates);
+  const budgetPerPersonLocal = convertFromUsd(plan.budgetUsd, currency, rates);
   const suggestedLang = countryToLocale[plan.country];
 
   const countries = useMemo(() => {
@@ -347,7 +348,7 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
           ) : null}
 
           {activeId === "budget" ? (
-            <div className="mt-7 max-w-xl">
+            <div className="mt-6 max-w-2xl">
               <p className="text-sm leading-relaxed text-ink-soft">
                 {messages.planner.budgetHint}
               </p>
@@ -365,9 +366,20 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
                 travelers={plan.travelers}
                 inUsdLabel={messages.planner.inUsd}
                 perPersonLabel={messages.planner.budgetPerPerson}
+                approxLabel={messages.planner.budgetApprox}
                 partyTotalLabel={interpolate(messages.planner.budgetPartyTotal, {
                   n: String(plan.travelers),
                 })}
+                partyMathLabel={interpolate(messages.planner.budgetPartyMath, {
+                  person: formatMoney(
+                    convertFromUsd(plan.budgetUsd, currency, rates),
+                    currency,
+                    locale,
+                  ),
+                  n: String(plan.travelers),
+                })}
+                ceilingLabel={messages.planner.budgetCeiling}
+                quickLabel={messages.planner.budgetQuick}
                 editAria={messages.planner.budgetEditAria}
                 onChangeUsd={(budgetUsd) => updatePlan({ budgetUsd })}
               />
@@ -593,6 +605,8 @@ export function PlannerWizard({ messages }: { messages: Messages }) {
           currency={currency}
           locale={locale}
           budgetLocal={budgetLocal}
+          budgetPerPersonLocal={budgetPerPersonLocal}
+          travelers={plan.travelers}
           budgetFlexible={plan.budgetFlexible}
         />
       </div>

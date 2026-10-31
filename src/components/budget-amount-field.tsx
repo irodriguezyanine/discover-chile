@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { Calculator, Users } from "lucide-react";
 import {
   convertFromUsd,
   convertToUsd,
@@ -9,9 +10,11 @@ import {
 } from "@/lib/currency";
 import { cn } from "@/lib/cn";
 
-const BUDGET_USD_MIN = 800;
-const BUDGET_USD_MAX = 20000;
-const BUDGET_USD_STEP = 100;
+const BUDGET_USD_MIN = 400;
+const BUDGET_USD_MAX = 12000;
+const BUDGET_USD_STEP = 50;
+
+const QUICK_USD = [800, 1500, 2500, 4000, 6000] as const;
 
 function clampBudgetUsd(value: number) {
   const stepped = Math.round(value / BUDGET_USD_STEP) * BUDGET_USD_STEP;
@@ -19,7 +22,12 @@ function clampBudgetUsd(value: number) {
 }
 
 function roundLocal(amount: number, currency: string) {
-  if (currency === "CLP" || currency === "JPY" || currency === "KRW" || amount >= 1000) {
+  if (
+    currency === "CLP" ||
+    currency === "JPY" ||
+    currency === "KRW" ||
+    amount >= 1000
+  ) {
     return Math.round(amount);
   }
   return Math.round(amount * 100) / 100;
@@ -46,7 +54,6 @@ function parseDraft(raw: string) {
   const hasDot = cleaned.includes(".");
   let normalized = cleaned;
   if (hasComma && hasDot) {
-    // Last separator is the decimal mark.
     if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
       normalized = cleaned.replace(/\./g, "").replace(",", ".");
     } else {
@@ -72,7 +79,11 @@ export function BudgetAmountField({
   travelers,
   inUsdLabel,
   perPersonLabel,
+  approxLabel,
   partyTotalLabel,
+  partyMathLabel,
+  ceilingLabel,
+  quickLabel,
   editAria,
   onChangeUsd,
 }: {
@@ -83,7 +94,11 @@ export function BudgetAmountField({
   travelers: number;
   inUsdLabel: string;
   perPersonLabel: string;
+  approxLabel: string;
   partyTotalLabel: string;
+  partyMathLabel: string;
+  ceilingLabel: string;
+  quickLabel: string;
   editAria: string;
   onChangeUsd: (nextUsd: number) => void;
 }) {
@@ -92,16 +107,22 @@ export function BudgetAmountField({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
+  const people = Math.max(1, travelers);
   const localAmount = roundLocal(
     convertFromUsd(budgetUsd, currency, rates),
     currency,
   );
   const symbol = currencySymbol(currency, locale);
+  const partyUsd = budgetUsd * people;
+  const partyLocal = roundLocal(
+    convertFromUsd(partyUsd, currency, rates),
+    currency,
+  );
+  const sliderPct =
+    ((budgetUsd - BUDGET_USD_MIN) / (BUDGET_USD_MAX - BUDGET_USD_MIN)) * 100;
 
   useEffect(() => {
-    if (!editing) {
-      setDraft(formatDraft(localAmount, locale));
-    }
+    if (!editing) setDraft(formatDraft(localAmount, locale));
   }, [editing, localAmount, locale]);
 
   const commitDraft = () => {
@@ -114,98 +135,161 @@ export function BudgetAmountField({
     const nextUsd = clampBudgetUsd(convertToUsd(parsed, currency, rates));
     onChangeUsd(nextUsd);
     setDraft(
-      formatDraft(roundLocal(convertFromUsd(nextUsd, currency, rates), currency), locale),
+      formatDraft(
+        roundLocal(convertFromUsd(nextUsd, currency, rates), currency),
+        locale,
+      ),
     );
   };
 
-  const partyUsd = budgetUsd * Math.max(1, travelers);
-  const partyLocal = roundLocal(
-    convertFromUsd(partyUsd, currency, rates),
-    currency,
-  );
-
   return (
-    <div className="mt-6 space-y-4">
-      <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-terracotta">
-        {perPersonLabel}
-      </p>
-      <label
-        htmlFor={inputId}
-        className={cn(
-          "group flex items-baseline gap-2 rounded-[1.35rem] border border-line/80 bg-white px-4 py-3 shadow-sm transition",
-          "focus-within:border-terracotta focus-within:ring-2 focus-within:ring-terracotta/20",
-          "md:px-5 md:py-4",
-        )}
-      >
-        <span className="select-none font-display text-3xl leading-none text-ink-soft md:text-4xl">
-          {symbol}
-        </span>
-        <input
-          ref={inputRef}
-          id={inputId}
-          inputMode="decimal"
-          enterKeyHint="done"
-          autoComplete="off"
-          spellCheck={false}
-          aria-label={editAria}
-          value={editing ? draft : formatDraft(localAmount, locale)}
-          onFocus={() => {
-            setEditing(true);
-            setDraft(formatDraft(localAmount, locale));
-            requestAnimationFrame(() => inputRef.current?.select());
-          }}
-          onChange={(event) => {
-            setEditing(true);
-            setDraft(event.target.value);
-          }}
-          onBlur={commitDraft}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              inputRef.current?.blur();
-            }
-            if (event.key === "Escape") {
-              event.preventDefault();
-              setDraft(formatDraft(localAmount, locale));
-              setEditing(false);
-              inputRef.current?.blur();
-            }
-          }}
-          className="min-w-0 flex-1 bg-transparent font-display text-4xl leading-none tracking-tight text-ink outline-none tabular-nums md:text-5xl"
-        />
-        <span className="hidden shrink-0 text-sm text-ink-soft sm:inline">
-          {perPersonLabel}
-        </span>
-      </label>
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-[1.1rem] bg-sand-deep/70 px-3.5 py-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-ink-soft">
-            {partyTotalLabel}
+    <div className="mt-5 space-y-4">
+      <div className="inline-flex items-center gap-2 rounded-full bg-terracotta/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-terracotta">
+        <Users size={12} />
+        {approxLabel}
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-[1.15fr_0.85fr]">
+        <label
+          htmlFor={inputId}
+          className={cn(
+            "group flex flex-col rounded-[1.45rem] border border-line/80 bg-white p-4 shadow-sm transition",
+            "focus-within:border-terracotta focus-within:ring-2 focus-within:ring-terracotta/20",
+            "md:p-5",
+          )}
+        >
+          <span className="text-[10px] uppercase tracking-[0.2em] text-ink-soft">
+            {perPersonLabel}
+          </span>
+          <span className="mt-2 flex items-baseline gap-2">
+            <span className="select-none font-display text-3xl leading-none text-ink-soft md:text-4xl">
+              {symbol}
+            </span>
+            <input
+              ref={inputRef}
+              id={inputId}
+              inputMode="decimal"
+              enterKeyHint="done"
+              autoComplete="off"
+              spellCheck={false}
+              aria-label={editAria}
+              value={editing ? draft : formatDraft(localAmount, locale)}
+              onFocus={() => {
+                setEditing(true);
+                setDraft(formatDraft(localAmount, locale));
+                requestAnimationFrame(() => inputRef.current?.select());
+              }}
+              onChange={(event) => {
+                setEditing(true);
+                setDraft(event.target.value);
+              }}
+              onBlur={commitDraft}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  inputRef.current?.blur();
+                }
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  setDraft(formatDraft(localAmount, locale));
+                  setEditing(false);
+                  inputRef.current?.blur();
+                }
+              }}
+              className="min-w-0 flex-1 bg-transparent font-display text-4xl leading-none tracking-tight text-ink outline-none tabular-nums md:text-5xl"
+            />
+          </span>
+          <span className="mt-2 text-sm text-ink-soft">
+            {formatMoney(budgetUsd, "USD", "en")} {perPersonLabel}
+          </span>
+        </label>
+
+        <div className="rounded-[1.45rem] bg-night px-4 py-4 text-cream shadow-[0_14px_34px_rgba(8,20,16,0.22)] md:px-5">
+          <p className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-glacier">
+            <Calculator size={12} />
+            {ceilingLabel}
           </p>
-          <p className="mt-0.5 font-display text-2xl tabular-nums text-ink">
+          <p className="mt-2 font-display text-3xl leading-none tracking-tight tabular-nums md:text-4xl">
             {formatMoney(partyLocal, currency, locale)}
           </p>
-        </div>
-        <p className="text-right text-sm text-ink-soft">
-          {formatMoney(budgetUsd, "USD", "en")} {perPersonLabel}
-          <span className="mt-0.5 block text-xs text-ink-soft/70">
+          <p className="mt-2 text-sm text-cream/65">
+            {partyMathLabel}
+          </p>
+          <p className="mt-1 text-xs text-cream/45">
             {formatMoney(partyUsd, "USD", "en")} {inUsdLabel}
-          </span>
-        </p>
+          </p>
+          <p className="mt-3 rounded-full bg-white/10 px-2.5 py-1 text-[11px] text-cream/80">
+            {partyTotalLabel}
+          </p>
+        </div>
       </div>
-      <input
-        type="range"
-        min={BUDGET_USD_MIN}
-        max={BUDGET_USD_MAX}
-        step={BUDGET_USD_STEP}
-        value={budgetUsd}
-        onChange={(event) => onChangeUsd(Number(event.target.value))}
-        className="planner-range w-full"
-        aria-label={editAria}
-      />
-      <div className="flex justify-between text-[11px] uppercase tracking-[0.18em] text-ink-soft/80">
-        <span>{formatMoney(BUDGET_USD_MIN, "USD", "en")}</span>
-        <span>{formatMoney(BUDGET_USD_MAX, "USD", "en")}</span>
+
+      <div>
+        <div className="mb-2 flex items-center justify-between gap-2 text-[11px] uppercase tracking-[0.16em] text-ink-soft">
+          <span>{perPersonLabel}</span>
+          <span className="tabular-nums text-ink">
+            {formatMoney(localAmount, currency, locale)}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={BUDGET_USD_MIN}
+          max={BUDGET_USD_MAX}
+          step={BUDGET_USD_STEP}
+          value={budgetUsd}
+          onChange={(event) => onChangeUsd(Number(event.target.value))}
+          className="planner-range w-full"
+          style={{
+            background: `linear-gradient(90deg, var(--terracotta) ${sliderPct}%, var(--sand-deep) ${sliderPct}%)`,
+          }}
+          aria-label={editAria}
+        />
+        <div className="mt-1.5 flex justify-between text-[11px] uppercase tracking-[0.16em] text-ink-soft/80">
+          <span>
+            {formatMoney(
+              roundLocal(convertFromUsd(BUDGET_USD_MIN, currency, rates), currency),
+              currency,
+              locale,
+            )}
+          </span>
+          <span>
+            {formatMoney(
+              roundLocal(convertFromUsd(BUDGET_USD_MAX, currency, rates), currency),
+              currency,
+              locale,
+            )}
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-[10px] uppercase tracking-[0.18em] text-ink-soft">
+          {quickLabel}
+        </p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {QUICK_USD.map((amount) => {
+            const active = budgetUsd === amount;
+            const local = roundLocal(
+              convertFromUsd(amount, currency, rates),
+              currency,
+            );
+            return (
+              <button
+                key={amount}
+                type="button"
+                onClick={() => onChangeUsd(amount)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs tabular-nums transition",
+                  active
+                    ? "border-terracotta bg-terracotta text-cream"
+                    : "border-line bg-white text-ink-soft hover:border-terracotta/40 hover:text-ink",
+                )}
+              >
+                {formatMoney(local, currency, locale)}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

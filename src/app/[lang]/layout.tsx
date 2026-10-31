@@ -6,7 +6,9 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DocumentLang } from "@/components/document-lang";
 import { PlannerProvider } from "@/components/planner-context";
+import { CurrencyProvider } from "@/components/currency-context";
 import { PlannerDesk } from "@/components/planner-desk";
+import { DeskWelcome } from "@/components/desk-welcome";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 
@@ -65,18 +67,21 @@ export default async function LangLayout({
       className={`${outfit.variable} ${fraunces.variable} flex min-h-dvh flex-col bg-sand font-sans text-ink`}
     >
       <PlannerProvider locale={locale}>
-        <DocumentLang locale={locale} />
-        <a href="#content" className="skip-link">
-          Skip to content
-        </a>
-        <SiteHeader locale={locale} messages={messages} />
-        <div id="content" className="flex-1">
-          {children}
-        </div>
-        <SiteFooter locale={locale} messages={messages} />
-        <Suspense fallback={null}>
-          <PlannerDesk messages={messages} />
-        </Suspense>
+        <CurrencyProvider>
+          <DocumentLang locale={locale} />
+          <a href="#content" className="skip-link">
+            Skip to content
+          </a>
+          <SiteHeader locale={locale} messages={messages} />
+          <div id="content" className="flex-1">
+            {children}
+          </div>
+          <SiteFooter locale={locale} messages={messages} />
+          <Suspense fallback={null}>
+            <PlannerDesk messages={messages} />
+          </Suspense>
+          <DeskWelcome messages={messages} locale={locale} />
+        </CurrencyProvider>
       </PlannerProvider>
     </div>
   );

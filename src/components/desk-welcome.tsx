@@ -1,7 +1,13 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/en";
 import { ChileFlag } from "@/components/chile-flag";
@@ -51,10 +57,14 @@ function readDraft(): Draft | null {
 }
 
 function writeDraft(draft: Draft) {
-  sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // Private mode / quota — ignore.
+  }
 }
 
-function initialIdentity(guest: GuestProfile | null, steps: WelcomeStepId[]) {
+function bootIdentity(guest: GuestProfile | null, steps: WelcomeStepId[]) {
   const draft = readDraft();
   const fallbackStep = steps[0] ?? "language";
   const step =
@@ -107,6 +117,30 @@ function useIsDesktop() {
   );
 }
 
+function WelcomeBackdrop({ desktop }: { desktop: boolean }) {
+  const src = desktop
+    ? "/welcome/chile-desktop.webp"
+    : "/welcome/chile-mobile.webp";
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden
+    >
+      {/* Plain <img>: one asset, no Next image double-decode of both views. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        decoding="async"
+        fetchPriority="high"
+        className="welcome-bg-photo absolute inset-0 h-full w-full object-cover object-center"
+      />
+      <div className="welcome-bg-wash absolute inset-0" />
+    </div>
+  );
+}
+
 function DeskWelcomeForm({
   messages,
   locale,
@@ -121,7 +155,12 @@ function DeskWelcomeForm({
   const alreadyOnboarded = Boolean(guest?.onboarded);
   const isDesktop = useIsDesktop();
   const steps = isDesktop ? DESKTOP_STEPS : MOBILE_STEPS;
-  const boot = initialIdentity(guest, steps);
+
+  const bootRef = useRef<ReturnType<typeof bootIdentity> | null>(null);
+  if (!bootRef.current) {
+    bootRef.current = bootIdentity(guest, steps);
+  }
+  const boot = bootRef.current;
 
   const [name, setName] = useState(boot.name);
   const [country, setCountry] = useState(boot.country);
@@ -129,12 +168,51 @@ function DeskWelcomeForm({
   const [currencyTouched, setCurrencyTouched] = useState(boot.currencyTouched);
   const [step, setStep] = useState<WelcomeStepId>(boot.step);
 
-  // If viewport flips and current step is invalid (cursor on mobile), remap.
+  const draftRef = useRef({
+    name: boot.name,
+    country: boot.country,
+    cursor: boot.cursor,
+    currencyTouched: boot.currencyTouched,
+    step: boot.step,
+  });
+  const persistTimer = useRef<number | null>(null);
+
+  const flushDraft = useCallback((patch?: Partial<Draft>) => {
+    draftRef.current = { ...draftRef.current, ...patch };
+    writeDraft(draftRef.current);
+  }, []);
+
+  const scheduleDraft = useCallback(
+    (patch?: Partial<Draft>) => {
+      draftRef.current = { ...draftRef.current, ...patch };
+      if (persistTimer.current != null) {
+        window.clearTimeout(persistTimer.current);
+      }
+      persistTimer.current = window.setTimeout(() => {
+        persistTimer.current = null;
+        writeDraft(draftRef.current);
+      }, 280);
+    },
+    [],
+  );
+
+  useEffect(
+    () => () => {
+      if (persistTimer.current != null) {
+        window.clearTimeout(persistTimer.current);
+        writeDraft(draftRef.current);
+      }
+    },
+    [],
+  );
+
   useEffect(() => {
     if (!steps.includes(step)) {
-      setStep(steps[0] ?? "language");
+      const fallback = steps[0] ?? "language";
+      setStep(fallback);
+      flushDraft({ step: fallback });
     }
-  }, [steps, step]);
+  }, [steps, step, flushDraft]);
 
   const activeStep = steps.includes(step) ? step : (steps[0] ?? "language");
   const stepIndex = Math.max(0, steps.indexOf(activeStep));
@@ -146,39 +224,41 @@ function DeskWelcomeForm({
   const greeting = pastName
     ? `${desk.holaPo}, ${name.trim()}`
     : desk.holaPo;
-
-  const persist = (next?: Partial<Draft>) => {
-    writeDraft({
-      name,
-      country,
-      cursor,
-      step: activeStep,
-      currencyTouched,
-      ...next,
-    });
-  };
-
-  const canContinue = useMemo(() => {
-    if (activeStep === "name") return nameReady;
-    if (activeStep === "country") return Boolean(country);
-    if (activeStep === "cursor") return Boolean(cursor);
-    return true;
-  }, [activeStep, country, cursor, nameReady]);
+  const canContinue =
+    activeStep === "name"
+      ? nameReady
+      : activeStep === "country"
+        ? Boolean(country)
+        : activeStep === "cursor"
+          ? Boolean(cursor)
+          : true;
 
   const goNext = () => {
     if (!canContinue || isLast) return;
     const nextStep = steps[stepIndex + 1];
     if (!nextStep) return;
-    setStep(nextStep);
-    persist({ step: nextStep, name, country, cursor, currencyTouched });
+    startTransition(() => setStep(nextStep));
+    flushDraft({
+      step: nextStep,
+      name,
+      country,
+      cursor,
+      currencyTouched,
+    });
   };
 
   const goBack = () => {
     if (isFirst) return;
     const prevStep = steps[stepIndex - 1];
     if (!prevStep) return;
-    setStep(prevStep);
-    persist({ step: prevStep, name, country, cursor, currencyTouched });
+    startTransition(() => setStep(prevStep));
+    flushDraft({
+      step: prevStep,
+      name,
+      country,
+      cursor,
+      currencyTouched,
+    });
   };
 
   const finish = (next: "home" | "plan") => {
@@ -209,25 +289,7 @@ function DeskWelcomeForm({
       aria-modal="true"
       aria-labelledby="desk-welcome-title"
     >
-      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-        <Image
-          src="/welcome/chile-mobile.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="welcome-bg-photo object-cover object-center md:hidden"
-        />
-        <Image
-          src="/welcome/chile-desktop.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="welcome-bg-photo hidden object-cover object-center md:block"
-        />
-        <div className="welcome-bg-wash absolute inset-0" />
-      </div>
+      <WelcomeBackdrop desktop={isDesktop} />
 
       <div className="welcome-panel relative z-10 mx-auto my-auto flex w-full max-w-[34rem] flex-col rounded-[1.7rem] px-5 py-5 ring-1 ring-white/55 md:rounded-[2rem] md:px-8 md:py-8">
         {alreadyOnboarded ? (
@@ -238,7 +300,7 @@ function DeskWelcomeForm({
               skipGate();
               openPlanner();
             }}
-            className="mb-4 h-11 self-start rounded-full bg-white/90 px-4 text-sm shadow-sm ring-1 ring-black/10 backdrop-blur-sm md:mb-6"
+            className="mb-4 h-11 self-start rounded-full bg-white/95 px-4 text-sm shadow-sm ring-1 ring-black/10 md:mb-6"
           >
             {messages.planner.back}
           </button>
@@ -246,7 +308,7 @@ function DeskWelcomeForm({
           <button
             type="button"
             onClick={goBack}
-            className="mb-4 h-11 self-start rounded-full bg-white/90 px-4 text-sm shadow-sm ring-1 ring-black/10 backdrop-blur-sm md:mb-6"
+            className="mb-4 h-11 self-start rounded-full bg-white/95 px-4 text-sm shadow-sm ring-1 ring-black/10 md:mb-6"
           >
             {messages.planner.back}
           </button>
@@ -278,7 +340,7 @@ function DeskWelcomeForm({
               locale={locale}
               title={desk.phoneLangQ}
               onBeforePick={() =>
-                persist({
+                flushDraft({
                   name,
                   country,
                   cursor,
@@ -295,7 +357,7 @@ function DeskWelcomeForm({
               cursor={cursor}
               onCursor={(value) => {
                 setCursor(value);
-                persist({ cursor: value, step: "cursor" });
+                flushDraft({ cursor: value, step: "cursor" });
               }}
             />
           ) : null}
@@ -306,7 +368,7 @@ function DeskWelcomeForm({
               name={name}
               onName={(value) => {
                 setName(value);
-                persist({ name: value, step: "name" });
+                scheduleDraft({ name: value, step: "name" });
               }}
               placeholder={desk.phoneNamePh}
             />
@@ -320,7 +382,7 @@ function DeskWelcomeForm({
               currencyTouched={currencyTouched}
               onCountry={(value) => {
                 setCountry(value);
-                persist({ country: value, step: "country" });
+                flushDraft({ country: value, step: "country" });
               }}
             />
           ) : null}
@@ -330,7 +392,7 @@ function DeskWelcomeForm({
               title={desk.phoneCurrencyQ}
               onUserPick={() => {
                 setCurrencyTouched(true);
-                persist({ currencyTouched: true, step: "currency" });
+                flushDraft({ currencyTouched: true, step: "currency" });
               }}
             />
           ) : null}
@@ -343,7 +405,7 @@ function DeskWelcomeForm({
                 type="button"
                 disabled={!canContinue}
                 onClick={() => finish("home")}
-                className="h-12 rounded-full bg-white/95 text-sm font-medium shadow-sm ring-1 ring-black/10 disabled:opacity-40"
+                className="h-12 rounded-full bg-white text-sm font-medium shadow-sm ring-1 ring-black/10 disabled:opacity-40"
               >
                 {desk.deskGoHome}
               </button>
@@ -351,7 +413,7 @@ function DeskWelcomeForm({
                 type="button"
                 disabled={!canContinue}
                 onClick={() => finish("plan")}
-                className="h-12 rounded-full bg-terracotta text-sm font-medium text-cream shadow-[0_10px_24px_rgba(196,92,38,0.28)] disabled:opacity-40"
+                className="h-12 rounded-full bg-terracotta text-sm font-medium text-cream shadow-[0_8px_20px_rgba(196,92,38,0.22)] disabled:opacity-40"
               >
                 {desk.deskPlanTrip}
               </button>
@@ -362,7 +424,7 @@ function DeskWelcomeForm({
               data-welcome-next
               disabled={!canContinue}
               onClick={goNext}
-              className="h-12 w-full rounded-full bg-terracotta text-sm font-medium text-cream shadow-[0_10px_24px_rgba(196,92,38,0.28)] disabled:opacity-40"
+              className="h-12 w-full rounded-full bg-terracotta text-sm font-medium text-cream shadow-[0_8px_20px_rgba(196,92,38,0.22)] disabled:opacity-40"
             >
               {desk.phoneContinue}
             </button>

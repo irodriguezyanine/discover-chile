@@ -61,11 +61,12 @@ function getServerSnapshot() {
   return defaultCurrency;
 }
 
-function useRates() {
+function useRates(enabled: boolean) {
   const [rates, setRates] = useState(fallbackRates);
   const [live, setLive] = useState(false);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     fetch("https://open.er-api.com/v6/latest/USD")
       .then((response) => response.json())
@@ -79,14 +80,15 @@ function useRates() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabled]);
 
   return { rates, live };
 }
 
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const { plan, guest } = usePlanner();
-  const { rates, live } = useRates();
+  const { plan, guest, gate } = usePlanner();
+  // Skip FX network + context churn while the welcome gate owns the screen.
+  const { rates, live } = useRates(!gate);
   const stored = useSyncExternalStore(
     subscribeStorage,
     readStoredCurrency,

@@ -87,16 +87,29 @@ export function getCountryProfile(code: string): CountryProfile {
   );
 }
 
+let cachedAllCountryCodes: string[] | null = null;
+
 export function allCountryCodes(): string[] {
-  const extras = extraCountryCodes.filter(
-    (code) => !countryProfiles.some((country) => country.code === code),
-  );
-  return [...countryProfiles.map((country) => country.code), ...extras].sort();
+  if (cachedAllCountryCodes) return cachedAllCountryCodes;
+  const profileCodes = new Set(countryProfiles.map((country) => country.code));
+  const extras = extraCountryCodes.filter((code) => !profileCodes.has(code));
+  cachedAllCountryCodes = [
+    ...countryProfiles.map((country) => country.code),
+    ...extras,
+  ].sort();
+  return cachedAllCountryCodes;
 }
+
+const displayNamesCache = new Map<string, Intl.DisplayNames>();
 
 export function countryName(code: string, locale: string): string {
   try {
-    return new Intl.DisplayNames([locale], { type: "region" }).of(code) ?? code;
+    let names = displayNamesCache.get(locale);
+    if (!names) {
+      names = new Intl.DisplayNames([locale], { type: "region" });
+      displayNamesCache.set(locale, names);
+    }
+    return names.of(code) ?? code;
   } catch {
     return code;
   }

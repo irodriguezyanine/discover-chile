@@ -9,6 +9,7 @@ import { PlannerProvider } from "@/components/planner-context";
 import { CurrencyProvider } from "@/components/currency-context";
 import { PlannerDesk } from "@/components/planner-desk";
 import { DeskWelcome } from "@/components/desk-welcome";
+import { GateShell } from "@/components/gate-shell";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { isLocale, locales, type Locale } from "@/i18n/config";
 
@@ -72,15 +73,18 @@ export default async function LangLayout({
           <a href="#content" className="skip-link">
             Skip to content
           </a>
-          <SiteHeader locale={locale} messages={messages} />
-          <div id="content" className="flex-1">
+          <GateShell
+            welcome={<DeskWelcome messages={messages} locale={locale} />}
+            header={<SiteHeader locale={locale} messages={messages} />}
+            footer={<SiteFooter locale={locale} messages={messages} />}
+            planner={
+              <Suspense fallback={null}>
+                <PlannerDesk messages={messages} />
+              </Suspense>
+            }
+          >
             {children}
-          </div>
-          <SiteFooter locale={locale} messages={messages} />
-          <Suspense fallback={null}>
-            <PlannerDesk messages={messages} />
-          </Suspense>
-          <DeskWelcome messages={messages} locale={locale} />
+          </GateShell>
         </CurrencyProvider>
       </PlannerProvider>
     </div>

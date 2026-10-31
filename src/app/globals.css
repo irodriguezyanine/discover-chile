@@ -146,6 +146,70 @@ h3,
   cursor: pointer;
 }
 
+.welcome-screen {
+  isolation: isolate;
+}
+
+.welcome-bg-photo {
+  transform: scale(1.05);
+  filter: saturate(0.72) contrast(0.9) brightness(1.08);
+}
+
+.welcome-bg-wash {
+  background:
+    radial-gradient(
+      95% 70% at 50% 45%,
+      color-mix(in srgb, var(--sand) 78%, transparent) 0%,
+      color-mix(in srgb, var(--sand) 52%, transparent) 55%,
+      color-mix(in srgb, var(--sand) 34%, transparent) 100%
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sand) 70%, transparent) 0%,
+      color-mix(in srgb, var(--sand) 38%, transparent) 36%,
+      color-mix(in srgb, var(--sand) 42%, transparent) 68%,
+      color-mix(in srgb, var(--sand) 78%, transparent) 100%
+    );
+}
+
+.welcome-panel {
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--cream) 88%, transparent),
+      color-mix(in srgb, var(--sand) 84%, transparent) 55%,
+      color-mix(in srgb, var(--cream) 80%, transparent)
+    );
+  box-shadow:
+    0 28px 70px rgba(16, 32, 24, 0.14),
+    0 1px 0 rgba(255, 250, 242, 0.72) inset;
+  backdrop-filter: blur(18px) saturate(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.welcome-title {
+  text-shadow: 0 1px 0 rgba(255, 250, 242, 0.7);
+}
+
+@media (max-width: 767px) {
+  .welcome-bg-wash {
+    background:
+      radial-gradient(
+        120% 58% at 50% 40%,
+        color-mix(in srgb, var(--sand) 74%, transparent) 0%,
+        color-mix(in srgb, var(--sand) 46%, transparent) 58%,
+        color-mix(in srgb, var(--sand) 28%, transparent) 100%
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--sand) 62%, transparent) 0%,
+        color-mix(in srgb, var(--sand) 28%, transparent) 34%,
+        color-mix(in srgb, var(--sand) 30%, transparent) 70%,
+        color-mix(in srgb, var(--sand) 68%, transparent) 100%
+      );
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -154,5 +218,9 @@ h3,
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .welcome-bg-photo {
+    transform: none;
   }
 }

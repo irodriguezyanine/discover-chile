@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { Locale } from "@/i18n/config";
 import type { Messages } from "@/i18n/en";
@@ -203,12 +204,32 @@ function DeskWelcomeForm({
 
   return (
     <div
-      className="welcome-screen fixed inset-0 z-[100] flex flex-col overflow-x-hidden bg-sand px-5 pt-[max(1.25rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] md:overflow-y-auto md:px-6 md:py-10"
+      className="welcome-screen fixed inset-0 z-[100] flex flex-col overflow-x-hidden bg-sand px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] md:overflow-y-auto md:px-6 md:py-10"
       role="dialog"
       aria-modal="true"
       aria-labelledby="desk-welcome-title"
     >
-      <div className="mx-auto flex w-full max-w-[34rem] flex-1 flex-col pb-4 md:pb-8">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <Image
+          src="/welcome/chile-mobile.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="welcome-bg-photo object-cover object-center md:hidden"
+        />
+        <Image
+          src="/welcome/chile-desktop.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="welcome-bg-photo hidden object-cover object-center md:block"
+        />
+        <div className="welcome-bg-wash absolute inset-0" />
+      </div>
+
+      <div className="welcome-panel relative z-10 mx-auto my-auto flex w-full max-w-[34rem] flex-col rounded-[1.7rem] px-5 py-5 ring-1 ring-white/55 md:rounded-[2rem] md:px-8 md:py-8">
         {alreadyOnboarded ? (
           <button
             type="button"
@@ -217,7 +238,7 @@ function DeskWelcomeForm({
               skipGate();
               openPlanner();
             }}
-            className="mb-4 h-11 self-start rounded-full bg-white px-4 text-sm ring-1 ring-black/10 md:mb-6"
+            className="mb-4 h-11 self-start rounded-full bg-white/90 px-4 text-sm shadow-sm ring-1 ring-black/10 backdrop-blur-sm md:mb-6"
           >
             {messages.planner.back}
           </button>
@@ -225,22 +246,22 @@ function DeskWelcomeForm({
           <button
             type="button"
             onClick={goBack}
-            className="mb-4 h-11 self-start rounded-full bg-white px-4 text-sm ring-1 ring-black/10 md:mb-6"
+            className="mb-4 h-11 self-start rounded-full bg-white/90 px-4 text-sm shadow-sm ring-1 ring-black/10 backdrop-blur-sm md:mb-6"
           >
             {messages.planner.back}
           </button>
         ) : (
-          <div className="mb-4 h-11 md:mb-6" aria-hidden />
+          <div className="mb-2 h-8 md:mb-6 md:h-11" aria-hidden />
         )}
 
         <ChileFlag
           variant="circle"
-          className="welcome-flag mx-auto size-20 md:size-24"
+          className="welcome-flag mx-auto size-20 shadow-[0_10px_28px_rgba(16,32,24,0.18)] md:size-24"
         />
 
         <h1
           id="desk-welcome-title"
-          className="mt-5 text-center font-display text-3xl leading-tight md:text-4xl"
+          className="welcome-title mt-4 text-center font-display text-3xl leading-tight text-ink md:mt-5 md:text-4xl"
         >
           {greeting}
         </h1>
@@ -251,7 +272,7 @@ function DeskWelcomeForm({
           </p>
         ) : null}
 
-        <div className="mt-8 flex-1">
+        <div className="mt-6 md:mt-8">
           {activeStep === "language" ? (
             <WelcomeLanguageStep
               locale={locale}
@@ -322,7 +343,7 @@ function DeskWelcomeForm({
                 type="button"
                 disabled={!canContinue}
                 onClick={() => finish("home")}
-                className="h-12 rounded-full bg-white text-sm font-medium ring-1 ring-black/10 disabled:opacity-40"
+                className="h-12 rounded-full bg-white/95 text-sm font-medium shadow-sm ring-1 ring-black/10 disabled:opacity-40"
               >
                 {desk.deskGoHome}
               </button>
@@ -330,7 +351,7 @@ function DeskWelcomeForm({
                 type="button"
                 disabled={!canContinue}
                 onClick={() => finish("plan")}
-                className="h-12 rounded-full bg-terracotta text-sm font-medium text-cream disabled:opacity-40"
+                className="h-12 rounded-full bg-terracotta text-sm font-medium text-cream shadow-[0_10px_24px_rgba(196,92,38,0.28)] disabled:opacity-40"
               >
                 {desk.deskPlanTrip}
               </button>
@@ -341,7 +362,7 @@ function DeskWelcomeForm({
               data-welcome-next
               disabled={!canContinue}
               onClick={goNext}
-              className="h-12 w-full rounded-full bg-terracotta text-sm font-medium text-cream disabled:opacity-40"
+              className="h-12 w-full rounded-full bg-terracotta text-sm font-medium text-cream shadow-[0_10px_24px_rgba(196,92,38,0.28)] disabled:opacity-40"
             >
               {desk.phoneContinue}
             </button>
